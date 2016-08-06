@@ -8,6 +8,8 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 
+#include "vblock.h"
+
 //alloc memory size
 #define IPC_ALLOC_PAGE_SIZE	1024
 
@@ -17,6 +19,7 @@ struct ipc {
 	int major;
 	struct class* class;
 	struct device* dev;
+	struct vblock vblock;
 };
 
 

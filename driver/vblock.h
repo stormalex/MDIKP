@@ -10,11 +10,12 @@
 #include <linux/mutex.h>
 
 struct vblock {
-	unsigned int* addr;
+	unsigned long* addr;
 	unsigned int size;
-	struct mutex vblock_mutex;
+	struct mutex mutex;
 };
 
-int vblock_init(unsigned int* addr, unsigned int size);
+int ipc_vblock_init(struct vblock* vblock, unsigned int size);
+void ipc_vblock_finalize(struct vblock* vblock);
 
 #endif //__VBLOCK_H__
