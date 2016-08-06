@@ -15,7 +15,7 @@ struct vblock {
 	struct mutex mutex;
 };
 
-int ipc_vblock_init(struct vblock* vblock, unsigned int size);
+int ipc_vblock_init(struct vblock* vblock, unsigned int size, struct proc_dir_entry* proc_dir);
 void ipc_vblock_finalize(struct vblock* vblock);
 
 #endif //__VBLOCK_H__

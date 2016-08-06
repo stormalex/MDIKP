@@ -9,10 +9,15 @@
 #include "vblock.h"
 
 
-int ipc_vblock_init(struct vblock* vblock, unsigned int size)
+int ipc_vblock_init(struct vblock* vblock, unsigned int size, struct proc_dir_entry* proc_dir)
 {
 	mutex_init(&vblock->mutex);
 
+	if(!proc_dir)
+		return -1;
+	
+	
+	
 	vblock->size = 0;
 	vblock->addr = (unsigned long*)__get_free_pages(GFP_KERNEL, get_order(size));
 	if(!vblock->addr) {

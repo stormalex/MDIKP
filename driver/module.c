@@ -77,22 +77,33 @@ static int ipc_module_init(void)
 {
 	int ret = 0;
 	
-	ret = ipc_cdev_init();
-	if(ret) {
-		printk("ipc_cdev_init() error\n");
+	memset(&ipc, 0, sizeof(struct ipc));
+	
+	ipc.proc_dir = proc_mkdir(IPC_PROC_DIR, NULL);
+	if(!ipc.proc_dir) {
+		printk("proc_mkdir() error\n");
 		ret = -1;
 		goto exit1;
 	}
 	
-	ret = ipc_vblock_init(&ipc.vblock, IPC_ALLOC_PAGE_SIZE);
+	ret = ipc_cdev_init();
+	if(ret) {
+		printk("ipc_cdev_init() error\n");
+		ret = -1;
+		goto exit2;
+	}
+	
+	ret = ipc_vblock_init(&ipc.vblock, IPC_ALLOC_PAGE_SIZE, ipc.proc_dir);
 	if(ret) {
 		printk("ipc_vblock_init() error\n");
-		goto exit2;
+		goto exit3;
 	}
 	return ret;
 
-exit2:
+exit3:
 	ipc_cdev_finalize();
+exit2:
+	remove_proc_entry(IPC_PROC_DIR, ipc.proc_dir);
 exit1:
 	return ret;
 }
@@ -101,6 +112,7 @@ static void ipc_module_exit(void)
 {
 	ipc_vblock_finalize(&ipc.vblock);
 	ipc_cdev_finalize();
+	remove_proc_entry(IPC_PROC_DIR, ipc.proc_dir);
 	return;
 }
 module_init(ipc_module_init);
