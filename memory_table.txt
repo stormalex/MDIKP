@@ -1,0 +1,30 @@
+﻿0x00000000 - 0x00040000 bootloader
+0x00040000 - 0x00060000 params
+0x00060000 - 0x00460000 kernel
+0x00460000 - 0x10000000 rootfs
+
+nand erase [off] [size]
+nand write [ram_addr] [off] [size]
+
+烧写u-boot
+nand erase.part u-boot
+tftp 30000000 u-boot.bin
+nand write 30000000 0 40000
+
+烧写内核
+nand erase.part kernel
+tftp 30000000 uImage
+nand write 30000000 60000 $filesize
+
+烧写文件系统
+nand erase.part rootfs
+tftp 30000000 fs.yaffs2
+nand write.yaffs 30000000 460000 $filesize
+
+
+UBOOT nfs下载命令
+nfs 30000000 192.168.2.200:/home/nick/nfsroot/uImage;bootm 30000000
+
+
+挂载nfs
+mount -o nolock 192.168.2.200:/home/nick/project/nfsroot /mnt

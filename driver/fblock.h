@@ -1,5 +1,5 @@
-#ifndef __VBLOCK_H__
-#define __VBLOCK_H__
+#ifndef __FBLOCK_H__
+#define __FBLOCK_H__
 
 #include <linux/fs.h>
 #include <linux/init.h>
@@ -11,14 +11,14 @@
 
 #include "def_ipc_common.h"
 
-struct vblock {
+struct fblock {
 	unsigned long addr;
 	unsigned int size;
 	struct mutex mutex;
 	struct wtsk* wtsk_list;
 };
 
-int ipc_vblock_init(struct vblock* vblock, unsigned int size);
-void ipc_vblock_finalize(struct vblock* vblock);
+int ipc_fblock_init(struct fblock* fblock, unsigned int size);
+void ipc_fblock_finalize(struct fblock* fblock);
 
-#endif //__VBLOCK_H__
+#endif //__FBLOCK_H__
