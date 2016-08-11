@@ -11,14 +11,25 @@
 
 #include "def_ipc_common.h"
 
+#define IPC_MEM_GUARD_SIZE (sizeof(unsigned long))
+#define IPC_BLOCK_SIZE (32)
+#define IPC_FBLOCK_SIZE  (IPC_BLOCK_SIZE + (IPC_MEM_GUARD_SIZE * 2))
+
+union block {
+	union block* next;
+	char data[IPC_FBLOCK_SIZE];
+};
+
 struct fblock {
 	unsigned long addr;
 	unsigned int size;
 	struct mutex mutex;
 	struct wtsk* wtsk_list;
+	union block* list;
+	unsigned int num;
 };
 
-int ipc_fblock_init(struct fblock* fblock, unsigned int size);
+int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size);
 void ipc_fblock_finalize(struct fblock* fblock);
 
 #endif //__FBLOCK_H__

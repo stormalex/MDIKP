@@ -7,6 +7,8 @@
 
 #include "def_ipc_common.h"
 
+unsigned long ipc_mem_addr = 0;;
+
 static int ipc_open(struct inode *inode, struct file *file)
 {
 #ifdef IPC_DEBUG

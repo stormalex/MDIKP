@@ -8,25 +8,31 @@
 
 #include "def_ipc_common.h"
 #include "fblock.h"
+#include "util.h"
 
-static struct fblock* p_fblock = NULL;
-
-int ipc_fblock_init(struct fblock* fblock, unsigned int size)
+int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size)
 {
+	unsigned int residue_size = 0;
+	
 	mutex_init(&fblock->mutex);
 	
 	fblock->wtsk_list = NULL;	
-	fblock->size = 0;
-	fblock->addr = __get_free_pages(GFP_KERNEL, get_order(size));
-	if(!fblock->addr) {
-		printk("__get_free_pages(GFP_KERNEL, %d) error\n", get_order(size));
-		return -ENOMEM;
-	}
-	printk("allock size=%dK order=%d\n", size, get_order(size));
-	
+	fblock->list = NULL;
 	fblock->size = size;
+	fblock->addr = addr;
+	fblock->num = 0;
 	
-	p_fblock = fblock;
+	residue_size = size;
+	
+	while(sizeof(union block) < residue_size) {
+		union block* block;
+		block = (union block*)(addr + residue_size);
+		residue_size -= sizeof(union block);
+		LIST_ADD_HEAD(block, fblock->list);
+		fblock->num++;
+	}
+	
+	printk("ipc_fblock_init() done! block number=%d\n", fblock->num);
 	
 	return 0;
 }
@@ -34,14 +40,12 @@ EXPORT_SYMBOL(ipc_fblock_init);
 
 void ipc_fblock_finalize(struct fblock* fblock)
 {
-	p_fblock = NULL;
+	fblock->addr = 0;
+	fblock->size = 0;
 	
-	if(fblock->addr && fblock->size) {
-		free_pages((unsigned long)fblock->addr, get_order(fblock->size));
-		fblock->addr = 0;
-		fblock->size = 0;
-	}
-
+	//wake up all sleep task, delete all task from list
+	
+	
 	return;
 }
 EXPORT_SYMBOL(ipc_fblock_finalize);

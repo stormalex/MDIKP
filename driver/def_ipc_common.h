@@ -9,14 +9,16 @@
 #include <linux/device.h>
 #include <linux/proc_fs.h>
 
-#define IPC_DEBUG
-
 #include "vblock.h"
 #include "fblock.h"
 
+#define IPC_DEBUG
+
 //alloc memory size
-#define IPC_VBLOCK_SIZE	1024*16
-#define IPC_FBLOCK_SIZE	1024*4
+#define IPC_MEM_SIZE		1024*16
+#define IPC_FBLOCK_MEM_SIZE	1024*2
+
+#define IPC_ALIGN_ADDR(x)	((x+0x03)&(~0x03))
 
 #define IPC_PROC_DIR		"ipc"
 #define IPC_PROC_MEM_ENTRY	"meminfo"

@@ -18,7 +18,7 @@ struct vblock {
 	struct wtsk* wtsk_list;
 };
 
-int ipc_vblock_init(struct vblock* vblock, unsigned int size);
+int ipc_vblock_init(struct vblock* vblock, unsigned long addr, unsigned int size);
 void ipc_vblock_finalize(struct vblock* vblock);
 
 #endif //__VBLOCK_H__
