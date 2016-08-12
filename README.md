@@ -1,2 +1,2 @@
-# ipkc
-inter-process-kernel-communication
+# MDIKP
+message dance in kernel and process
