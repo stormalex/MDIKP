@@ -4,29 +4,33 @@
 #include <linux/module.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
+#include <linux/uaccess.h>
 
 #include "def_ipc_common.h"
-#include "vblock.h"
-#include "fblock.h"
+#include "mem_wrapper.h"
 
-extern int ipc_cdev_init(struct ipc* ipc);
-extern void ipc_cdev_finalize(struct ipc* ipc);
-extern unsigned long ipc_mem_addr;
+/*************function declaration**************/
+int ipc_cdev_init(struct ipc* ipc);
+void ipc_cdev_finalize(struct ipc* ipc);
 
 static struct ipc ipc;
 
 static int dump_mem(char *page, char **start, off_t offset, int count, int *eof, void *data)
 {
+	int len = 0;
+	int limit = count - 80;
+
+	len += sprintf(page + len, "===========ipc meminfo===========\n");
+	len += ipc_mem_dump(page + len, limit - len);
+	len += sprintf(page + len, "=================================\n");
 	
 	*eof = 1;
-	return 0;
+	return len;
 }
 
 static int ipc_module_init(void)
 {
 	int ret = 0;
-	unsigned long addr = 0;
-	unsigned int size = 0;
 	
 	memset(&ipc, 0, sizeof(struct ipc));
 	
@@ -44,45 +48,26 @@ static int ipc_module_init(void)
 		goto exit2;
 	}
 	
-	ret = ipc_cdev_init(&ipc);
+	ret = ipc_mem_init(&ipc, IPC_MEM_SIZE);
 	if(ret) {
-		printk("ipc_cdev_init() error\n");
+		printk("ipc_mem_init() error\n");
 		ret = -1;
 		goto exit3;
 	}
 	
-	size = IPC_MEM_SIZE;
-	addr = __get_free_pages(GFP_KERNEL, get_order(size));
-	if(!addr) {
-		printk("__get_free_pages(GFP_KERNEL, %d) error\n", get_order(size));
-		ret = -ENOMEM;
+	ret = ipc_cdev_init(&ipc);
+	if(ret) {
+		printk("ipc_cdev_init() error\n");
+		ret = -1;
 		goto exit4;
 	}
 	
-	printk("allock addr=0x%08x, size=%dK order=%d\n", (unsigned int)addr, size, get_order(size));
-	ipc_mem_addr = addr;
 	
-	ret = ipc_fblock_init(&ipc.fblock, addr, IPC_FBLOCK_MEM_SIZE);
-	if(ret) {
-		printk("ipc_vblock_init() error\n");
-		goto exit5;
-	}
-	
-	addr += IPC_FBLOCK_MEM_SIZE;
-	addr = IPC_ALIGN_ADDR(addr);
-	
-	ret = ipc_vblock_init(&ipc.vblock, addr, size - IPC_FBLOCK_MEM_SIZE);
-	if(ret) {
-		printk("ipc_fblock_init() error\n");
-		goto exit6;
-	}
+
 	return ret;
-exit6:
-	ipc_fblock_finalize(&ipc.fblock);
-exit5:
-	free_pages(ipc_mem_addr, IPC_MEM_SIZE);
+
 exit4:
-	ipc_cdev_finalize(&ipc);
+	ipc_mem_finalize(&ipc);
 exit3:
 	remove_proc_entry(IPC_PROC_MEM_ENTRY, ipc.proc_dir);
 exit2:
@@ -93,10 +78,8 @@ exit1:
 
 static void ipc_module_exit(void)
 {
-	ipc_vblock_finalize(&ipc.vblock);
-	ipc_fblock_finalize(&ipc.fblock);
-	free_pages(ipc_mem_addr, IPC_MEM_SIZE);
 	ipc_cdev_finalize(&ipc);
+	ipc_mem_finalize(&ipc);
 	remove_proc_entry(IPC_PROC_MEM_ENTRY, ipc.proc_dir);
 	remove_proc_entry(IPC_PROC_DIR, NULL);
 	return;

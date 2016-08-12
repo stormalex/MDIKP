@@ -22,6 +22,7 @@ union block {
 
 struct fblock {
 	unsigned long addr;
+	unsigned int total_size;
 	unsigned int size;
 	struct mutex mutex;
 	struct wtsk* wtsk_list;
@@ -31,5 +32,6 @@ struct fblock {
 
 int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size);
 void ipc_fblock_finalize(struct fblock* fblock);
+int ipc_fblock_dump(struct fblock* fblock, char *buf, int limit);
 
 #endif //__FBLOCK_H__
