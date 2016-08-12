@@ -37,7 +37,7 @@ struct ipc {
 };
 
 struct wtsk {
-	void** cookie;
+	void* cookie;
 	unsigned long data;
 	struct wtsk* next;
 };

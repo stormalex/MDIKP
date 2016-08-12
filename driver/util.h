@@ -8,8 +8,14 @@
 		head = node;				\
 		node->member = tmp;			\
 	}while(0)
-	
+
+#define _LIST_DEL_HEAD(node, head, member)	\
+	do {							\
+		typeof(node) tmp = head;	\
+		head = tmp->member;			\
+	}while(0)						\
 
 #define LIST_ADD_HEAD(node, head) _LIST_ADD_HEAD(node, head, next)
+#define LIST_DEL_HEAD(node, head) _LIST_DEL_HEAD(node, head, next)
 
 #endif //__UTIL_H__

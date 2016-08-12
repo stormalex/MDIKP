@@ -21,13 +21,36 @@ int ipc_fblock_dump(struct fblock* fblock, char *buf, int limit)
 }
 EXPORT_SYMBOL(ipc_fblock_dump);
 
-/*
-IPC_ERR alloc_fblock()
+
+unsigned long alloc_fblock(struct fblock* fblock, int wait)
 {
-	IPC_ERR ret = IPC_ERR_OK;
+	int ret = 0;
+	unsigned long block = 0;
 	
+	mutex_lock(&fblock->mutex);
 	
-}*/
+	if(fblock->list) {
+		block = fblock->list;
+		LIST_DEL_HEAD(block, fblock->list);
+	}
+	else {
+		if(!wait) {
+			return block;
+		}
+		
+		struct wtsk wtsk;
+		
+		prepare_sleep(&wtsk.cookie);
+		mutex_unlock(&fblock->mutex);
+		do_sleep(&wtsk, wait);
+		
+		block = wtsk.data;
+	}
+	
+	mutex_unlock(&fblock->mutex);
+	
+	return block;
+}
 
 int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size)
 {
