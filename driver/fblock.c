@@ -30,26 +30,49 @@ unsigned long alloc_fblock(struct fblock* fblock, int wait)
 	mutex_lock(&fblock->mutex);
 	
 	if(fblock->list) {
-		block = fblock->list;
-		LIST_DEL_HEAD(block, fblock->list);
+		block = (unsigned long)fblock->list;
+		LIST_DEL_HEAD((union block*)block, fblock->list);
 	}
 	else {
 		if(!wait) {
 			return block;
 		}
 		
-		struct wtsk wtsk;
-		
-		prepare_sleep(&wtsk.cookie);
-		mutex_unlock(&fblock->mutex);
-		do_sleep(&wtsk, wait);
-		
-		block = wtsk.data;
+		{
+			struct wtsk wtsk;
+			struct wtsk* p_wtsk = &wtsk;
+			LIST_ADD_HEAD(p_wtsk, fblock->wtsk_list);
+			mutex_unlock(&fblock->mutex);
+			
+			prepare_sleep(&wtsk.cookie);
+			do_sleep(wait);
+			
+			block = wtsk.data;
+		}
 	}
 	
 	mutex_unlock(&fblock->mutex);
 	
 	return block;
+}
+
+void free_fblock(struct fblock* fblock, unsigned long addr)
+{
+	union block* block = (union block*)addr;
+	
+	mutex_lock(&fblock->mutex);
+	if(fblock->wtsk_list) {
+		struct wtsk* p_wtsk = fblock->wtsk_list;
+		LIST_DEL_HEAD(p_wtsk, fblock->wtsk_list);
+		mutex_unlock(&fblock->mutex);
+		p_wtsk->data = (unsigned long)block;
+		wakeup(p_wtsk->cookie);
+		return;
+	}
+	
+	LIST_ADD_HEAD(block, fblock->list);
+	mutex_unlock(&fblock->mutex);
+	return;
 }
 
 int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size)

@@ -36,6 +36,8 @@ struct ipc {
 	struct fblock fblock;
 };
 
+#define WAIT_FOREVER	0xFFFFFFFF
+
 struct wtsk {
 	void* cookie;
 	unsigned long data;
