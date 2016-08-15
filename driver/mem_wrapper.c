@@ -8,9 +8,43 @@
 
 #include "def_ipc_common.h"
 #include "vblock.h"
+#include "fblock.h"
 
 static struct vblock* vpool = NULL;
 static struct fblock* fblock = NULL;
+
+int ipc_mem_alloc(void** hdl, int size, int wait)
+{
+	int ret = 0;
+	unsigned long addr = 0;
+	int act_size = size + IPC_MEM_GUARD_SIZE;
+	printk("CALL ipc_mem_alloc(), size=%d, wait=%d\n", act_size, wait);
+	
+	if(act_size <= IPC_FBLOCK_SIZE) {
+		act_size = IPC_FBLOCK_SIZE;
+		
+		if(!fblock) {
+			return -ENODEV;
+		}
+		
+		addr = alloc_fblock(fblock, wait);
+		if(!addr) {
+			return -ENOMEM;
+		}
+	}
+	else {
+		if(!vpool) {
+			return -ENODEV;
+		}
+		
+		//addr = alloc_vpool(vpool, act_size, wait);
+	}
+	
+	*hdl = (void*)addr;
+	//init_guard_magic(addr, act_size);
+	
+	return ret;
+}
 
 int ipc_mem_dump(char *buf, int limit)
 {

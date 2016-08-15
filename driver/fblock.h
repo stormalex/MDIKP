@@ -11,6 +11,7 @@
 
 #include "def_ipc_common.h"
 
+
 #define IPC_MEM_GUARD_SIZE (sizeof(unsigned long))
 #define IPC_BLOCK_SIZE (32)
 #define IPC_FBLOCK_SIZE  (IPC_BLOCK_SIZE + (IPC_MEM_GUARD_SIZE * 2))
@@ -33,5 +34,6 @@ struct fblock {
 int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size);
 void ipc_fblock_finalize(struct fblock* fblock);
 int ipc_fblock_dump(struct fblock* fblock, char *buf, int limit);
-
+unsigned long alloc_fblock(struct fblock* fblock, int wait);
+void free_fblock(struct fblock* fblock, unsigned long addr);
 #endif //__FBLOCK_H__

@@ -15,6 +15,8 @@
 #include "fblock.h"
 
 /********************wrapper**************************/
+
+
 int ipc_mem_init(struct ipc* ipc, unsigned int size);
 void ipc_mem_finalize(struct ipc* ipc);
 int ipc_mem_dump(char *buf, int limit);
