@@ -5,6 +5,8 @@
 
 #include "def_ipc_common.h"
 
+
+
 /********************LIST**********************/
 
 #define _LIST_ADD_HEAD(node, head, member) \
@@ -43,14 +45,15 @@ inline void prepare_sleep(void** cookie)
 
 inline int do_sleep(void* cookie, signed long wait)
 {
+	int ret = 0;
 	if(wait == WAIT_FOREVER) {
 		schedule();
 	}
 	else {
-		schedule_timeout(wait * HZ);
+		ret = schedule_timeout(wait * HZ);
 	}
 	
-	if(signal_pending(cookie)) {
+	if(ret && signal_pending(cookie)) {
 		printk("wake up by signal");
 		return -EINTR;
 	}
@@ -65,16 +68,19 @@ inline void wakeup(void* cookie)
 }
 
 
-void add_wtsk_list_tail(struct wtsk* node, struct wtsk* head)
+inline void add_wtsk_list_tail(struct wtsk* node, struct wtsk** head)
 {
-	LIST_ADD_TAIL(node, head);
+	LIST_ADD_TAIL(node, *head);
 }
 
-void del_wtsk_list_head(struct wtsk* node, struct wtsk* head)
+inline void del_wtsk_list(struct wtsk* node, struct wtsk** head)
 {
-	LIST_DEL_HEAD(node, head);
+	typeof(node)* cur = head;
+	while(*cur) {
+		if(*cur == node)
+			*cur = node->next;
+		cur = &(*cur)->next;
+	}
 }
-
-
 
 #endif //__UTIL_H__

@@ -22,7 +22,7 @@ int ipc_fblock_dump(struct fblock* fblock, char *buf, int limit)
 EXPORT_SYMBOL(ipc_fblock_dump);
 
 
-unsigned long alloc_fblock(struct fblock* fblock, int wait)
+void* alloc_fblock(struct fblock* fblock, int wait)
 {
 	int ret = 0;
 	union block* block = 0;
@@ -32,7 +32,6 @@ unsigned long alloc_fblock(struct fblock* fblock, int wait)
 	mutex_lock(&fblock->mutex);
 	
 	if(fblock->list) {
-		//block = (unsigned long)fblock->list;
 		block = LIST_DEL_HEAD(block, fblock->list);
 		fblock->num--;
 	}
@@ -46,7 +45,7 @@ unsigned long alloc_fblock(struct fblock* fblock, int wait)
 				.data = 0,
 			};
 
-			add_wtsk_list_tail(&wtsk, fblock->wtsk_list);
+			add_wtsk_list_tail(&wtsk, &fblock->wtsk_list);
 			mutex_unlock(&fblock->mutex);
 			
 			prepare_sleep(&wtsk.cookie);
@@ -56,7 +55,7 @@ unsigned long alloc_fblock(struct fblock* fblock, int wait)
 			
 			block = (union block*)wtsk.data;
 			if(!block) {
-				del_wtsk_list_head(&wtsk, fblock->wtsk_list);
+				del_wtsk_list(&wtsk, &fblock->wtsk_list);
 				goto out;
 			}
 			
@@ -66,20 +65,21 @@ unsigned long alloc_fblock(struct fblock* fblock, int wait)
 out:
 	mutex_unlock(&fblock->mutex);
 
-	return (unsigned long)block;
+	return block;
 }
 EXPORT_SYMBOL(alloc_fblock);
 
-void free_fblock(struct fblock* fblock, unsigned long addr)
+void free_fblock(struct fblock* fblock, void* addr)
 {
-	union block* block = (union block*)addr;
+	union block* block = addr;
 	
 	mutex_lock(&fblock->mutex);
 	if(fblock->wtsk_list) {
-		struct wtsk* p_wtsk = fblock->wtsk_list;
-		del_wtsk_list_head(p_wtsk, fblock->wtsk_list);
+		struct wtsk* p_wtsk = NULL;
+		p_wtsk = LIST_DEL_HEAD(p_wtsk, fblock->wtsk_list);
 		mutex_unlock(&fblock->mutex);
 		p_wtsk->data = (unsigned long)block;
+		fblock->num++;
 		wakeup(p_wtsk->cookie);
 		return;
 	}

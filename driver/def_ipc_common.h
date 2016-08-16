@@ -9,10 +9,9 @@
 #include <linux/device.h>
 #include <linux/proc_fs.h>
 
-#include "vblock.h"
-#include "fblock.h"
-
 #define IPC_DEBUG
+
+#define IPC_MEM_GUARD_SIZE (sizeof(unsigned long))
 
 //alloc memory size
 #define IPC_MEM_SIZE		1024*16
@@ -32,8 +31,8 @@ struct ipc {
 	struct proc_dir_entry* mem_entry;
 	unsigned long mem_base;
 	unsigned int mem_size;
-	struct vblock vblock;
-	struct fblock fblock;
+	void* vblock;
+	void* fblock;
 };
 
 #define WAIT_FOREVER	0xFFFFFFFF
