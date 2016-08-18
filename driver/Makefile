@@ -8,4 +8,4 @@ clean:
 		rm -rf modules.order
 
 obj-m += ipc.o
-ipc-objs := module.o vblock.o fblock.o kif.o mem_wrapper.o
+ipc-objs := module.o vblock.o fblock.o kif.o mem_wrapper.o msg.o

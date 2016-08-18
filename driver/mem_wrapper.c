@@ -73,6 +73,7 @@ int ipc_mem_alloc(void** hdl, int size, int wait)
 	
 	return ret;
 }
+EXPORT_SYMBOL(ipc_mem_alloc);
 
 void ipc_mem_free(void* hdl, int size)
 {
@@ -88,6 +89,7 @@ void ipc_mem_free(void* hdl, int size)
 		//free_vpool(vpool, addr);
 	}
 }
+EXPORT_SYMBOL(ipc_mem_free);
 
 int ipc_mem_dump(char *buf, int limit)
 {
