@@ -24,7 +24,6 @@ EXPORT_SYMBOL(ipc_fblock_dump);
 
 void* alloc_fblock(struct fblock* fblock, int wait)
 {
-	int ret = 0;
 	union block* block = 0;
 	
 	printk("CALL alloc_fblock()\n");
