@@ -9,6 +9,7 @@
 #include "mem_wrapper.h"
 
 struct msg {
+	struct msg* next;
 	short size;
 	short flags;
 	unsigned int src_qid;
@@ -18,3 +19,18 @@ struct msg {
 #define MSG_HSIZE (offsetof(struct msg, payload))
 #define mem2msg(hdl)	container_of(hdl, struct msg, payload)
 #define msg2mem(msg)	(&(msg->payload))
+
+
+inline void set_msg_src(struct msg* hdl, int src_qid)
+{
+	hdl->src_qid = src_qid;
+}
+
+inline int get_msg_src(struct msg* hdl)
+{
+	return hdl->src_qid;
+}
+
+
+struct msg* alloc_msg(int size, int wait);
+void free_msg(struct msg* p_msg);

@@ -12,16 +12,6 @@ static void init_msg(struct msg* hdl, int size)
 	hdl->size = size;
 }
 
-void set_msg_src(struct msg* hdl, int src_qid)
-{
-	hdl->src_qid = src_qid;
-}
-
-int get_msg_src(struct msg* hdl)
-{
-	return hdl->src_qid;
-}
-
 struct msg* alloc_msg(int size, int wait)
 {
 	int ret = 0;
@@ -35,8 +25,15 @@ struct msg* alloc_msg(int size, int wait)
 	}
 	
 	if(p_msg) {
-		init_msg(p_msg, size);
+		init_msg(p_msg, act_size);
 	}
 	
 	return p_msg;
 }
+EXPORT_SYMBOL(alloc_msg);
+
+void free_msg(struct msg* p_msg)
+{
+	ipc_mem_free(p_msg, p_msg->size);
+}
+EXPORT_SYMBOL(free_msg);
