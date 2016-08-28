@@ -5,30 +5,38 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/sched.h>
+#include <linux/uaccess.h>
+#include <linux/mutex.h>
 
+#include "util.h"
 #include "def_ipc_common.h"
+#include "if.h"
 
-struct info {
+struct user_info {
 	int connected;
 	pid_t pid;
 	struct mm_struct *mm;
-	void* user_addr;
-	struct info* next;
+	unsigned long user_addr;
+	struct user_info* next;
 };
 
-struct info* user_list;
+struct user_info* user_list;
 
 static unsigned long ipc_mem_addr = 0;
 static unsigned long ipc_mem_size = 0;
 
-static struct info* add_new_user(void)
+typedef long (*CMD_FUNC)(struct user_info*, unsigned int, unsigned long);
+
+static struct user_info* add_new_user(void)
 {
-	struct info* p_info = kmalloc(sizeof(*p_info), GFP_KERNEL);
+	struct user_info* p_info = kmalloc(sizeof(*p_info), GFP_KERNEL);
 	if(!p_info) {
 		printk("kmalloc() failed\n");
 		return NULL;
 	}
 	
+	memset(p_info, 0, sizeof(*p_info));
+
 	p_info->mm = current->mm;
 	
 	return p_info;
@@ -36,19 +44,18 @@ static struct info* add_new_user(void)
 
 static int ipc_open(struct inode *inode, struct file *file)
 {
-	struct info* p_info = add_new_user();
+	struct user_info* p_info = add_new_user();
 	
 	if(p_info == NULL)
 		return -ENOMEM;
 	
 	file->private_data = p_info;
-	file->private_data = NULL;
 	
 	return 0;
 }
 static int ipc_close(struct inode *inode, struct file *file)
 {
-	struct info* p_info = file->private_data;
+	struct user_info* p_info = file->private_data;
 	
 	kfree(p_info);
 	
@@ -57,19 +64,77 @@ static int ipc_close(struct inode *inode, struct file *file)
 
 static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 {
-	struct info* p_info = file->private_data;
+	int ret = 0;
+	struct user_info* p_info = file->private_data;
+	unsigned long size = vm_area->vm_start - vm_area->vm_end;
 	
-	
+	ret = remap_pfn_range(vm_area,
+					vm_area->vm_start,
+					vm_area->vm_pgoff,
+					size,
+					vm_area->vm_page_prot);
+	if(ret) {
+		printk("remap_pfn_range error\n");
+		return -EAGAIN;
+	}
+
+	p_info->user_addr = vm_area->vm_start;
 	
 	return 0;
 }
 
+static long connect(struct user_info* info, unsigned int arg1, unsigned long arg2)
+{
+	printk("CALL connect\n");
+	LIST_ADD_TAIL(info, user_list);
+	info->connected = 1;
+	return 0;
+}
+
+CMD_FUNC cmd_func_list[CMD_MAX + 1] = {
+	connect,
+	NULL,
+};
+
+static long cmd_dispatcher(CMD_FUNC func, struct user_info* info, unsigned int arg1, unsigned long arg2)
+{
+	if(func) {
+		return func(info, arg1, arg2);
+	}
+	printk("func is NULL\n");
+	return -EINVAL;
+}
+
+static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	struct user_args args;
+	struct user_info* p_info = file->private_data;
+
+	//command error
+	if(cmd >= CMD_MAX) {
+		printk("CMD error\n");
+		return -EINVAL;
+	}
+
+	if(p_info->mm != current->mm) {
+		printk("Different process\n");
+		return -EACCES;
+	}
+
+	if(copy_from_user(&args, (void *)arg, sizeof(args))) {
+		printk("copy_from_user() error\n");
+		return -EFAULT;
+	}
+
+	return cmd_dispatcher(cmd_func_list[cmd], p_info, args.arg1, args.arg2);
+}
+
 static const struct file_operations ipc_fops = {
-	.owner 		= 	THIS_MODULE,
-	.open 		= 	ipc_open,
-	.release 	= 	ipc_close,
-	//.ioctl 	= 	ipc_ioctl,
-	.mmap 		= 	ipc_mmap,
+	.owner 			= 	THIS_MODULE,
+	.open 			= 	ipc_open,
+	.release 		= 	ipc_close,
+	.unlocked_ioctl	= 	ipc_ioctl,
+	.mmap 			= 	ipc_mmap,
 };
 
 int ipc_cdev_init(struct ipc* ipc)
@@ -98,6 +163,8 @@ int ipc_cdev_init(struct ipc* ipc)
 	
 	ipc_mem_addr = ipc->mem_base;
 	ipc_mem_size = ipc->mem_size;
+
+	user_list = NULL;
 	
 	return ret;
 	

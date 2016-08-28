@@ -6,7 +6,6 @@
 #include "def_ipc_common.h"
 
 
-
 /********************LIST**********************/
 
 #define _LIST_ADD_HEAD(node, head, member) \
@@ -37,13 +36,13 @@
 
 
 /************************TASK_SLEEP****************************/
-inline void prepare_sleep(void** cookie)
+static inline void prepare_sleep(void** cookie)
 {
 	*cookie = current;
 	__set_current_state(TASK_INTERRUPTIBLE);  //http://www.linuxjournal.com/article/8144
 }
 
-inline int do_sleep(void* cookie, signed long wait)
+static inline int do_sleep(void* cookie, signed long wait)
 {
 	int ret = 0;
 	if(wait == WAIT_FOREVER) {
@@ -62,18 +61,18 @@ inline int do_sleep(void* cookie, signed long wait)
 }
 
 
-inline void wakeup(void* cookie)
+static inline void wakeup(void* cookie)
 {
 	wake_up_process(cookie);
 }
 
 
-inline void add_wtsk_list_tail(struct wtsk* node, struct wtsk** head)
+static inline void add_wtsk_list_tail(struct wtsk* node, struct wtsk** head)
 {
 	LIST_ADD_TAIL(node, *head);
 }
 
-inline void del_wtsk_list(struct wtsk* node, struct wtsk** head)
+static inline void del_wtsk_list(struct wtsk* node, struct wtsk** head)
 {
 	typeof(node)* cur = head;
 	while(*cur) {
