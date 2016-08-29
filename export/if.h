@@ -3,7 +3,7 @@
 
 struct user_args {
 	unsigned int arg1;
-	unsigned long arg2;
+	unsigned int arg2;
 };
 
 enum CMD {
@@ -11,5 +11,8 @@ enum CMD {
 	CMD_MAX,
 };
 
+struct connect_args {
+	unsigned int size;
+};
 
 #endif //__KERNEL_USER_IF_H__

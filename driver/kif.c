@@ -20,7 +20,8 @@ struct user_info {
 	struct user_info* next;
 };
 
-struct user_info* user_list;
+static struct user_info* user_list;
+static struct mutex usr_list_mutex;
 
 static unsigned long ipc_mem_addr = 0;
 static unsigned long ipc_mem_size = 0;
@@ -65,12 +66,14 @@ static int ipc_close(struct inode *inode, struct file *file)
 static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 {
 	int ret = 0;
+	unsigned long pfn = 0;
 	struct user_info* p_info = file->private_data;
 	unsigned long size = vm_area->vm_start - vm_area->vm_end;
 	
+	pfn = __phys_to_pfn(virt_to_phys((void *)ipc_mem_addr));
 	ret = remap_pfn_range(vm_area,
 					vm_area->vm_start,
-					vm_area->vm_pgoff,
+					pfn,
 					size,
 					vm_area->vm_page_prot);
 	if(ret) {
@@ -83,32 +86,39 @@ static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 	return 0;
 }
 
-static long connect(struct user_info* info, unsigned int arg1, unsigned long arg2)
+static long cmd_connect(struct user_info* info, unsigned int arg1, unsigned long arg2)
 {
+	struct connect_args cdata;
+
 	printk("CALL connect\n");
+	
+	cdata.size = ipc_mem_size;
+	
+	if(copy_to_user((void *)arg2, &cdata, sizeof(cdata))) {
+		printk("copy_to_user() error\n");
+		return -EFAULT;
+	}
+
+	mutex_lock(&usr_list_mutex);
 	LIST_ADD_TAIL(info, user_list);
+	mutex_unlock(&usr_list_mutex);
+
 	info->connected = 1;
+
 	return 0;
 }
 
-CMD_FUNC cmd_func_list[CMD_MAX + 1] = {
-	connect,
+CMD_FUNC cmd_funcs[CMD_MAX + 1] = {
+	cmd_connect,
 	NULL,
 };
-
-static long cmd_dispatcher(CMD_FUNC func, struct user_info* info, unsigned int arg1, unsigned long arg2)
-{
-	if(func) {
-		return func(info, arg1, arg2);
-	}
-	printk("func is NULL\n");
-	return -EINVAL;
-}
 
 static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct user_args args;
 	struct user_info* p_info = file->private_data;
+
+	printk("CMD:0x%08x\n", cmd);
 
 	//command error
 	if(cmd >= CMD_MAX) {
@@ -126,7 +136,7 @@ static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return -EFAULT;
 	}
 
-	return cmd_dispatcher(cmd_func_list[cmd], p_info, args.arg1, args.arg2);
+	return cmd_funcs[cmd](p_info, args.arg1, args.arg2);
 }
 
 static const struct file_operations ipc_fops = {
@@ -165,6 +175,7 @@ int ipc_cdev_init(struct ipc* ipc)
 	ipc_mem_size = ipc->mem_size;
 
 	user_list = NULL;
+	mutex_init(&usr_list_mutex);
 	
 	return ret;
 	
