@@ -9,13 +9,13 @@
 #include "def_ipc_common.h"
 #include "vblock.h"
 #include "fblock.h"
+#include "if.h"
 
 #define IPC_MEM_GRARD_MAGIC_A	0xAAAAAAAA
 #define IPC_MEM_GRARD_MAGIC_B	0xBBBBBBBB
 
 static struct vblock* vpool = NULL;
 static struct fblock* fblock = NULL;
-
 
 static inline void init_guard_magic(void* addr, int size)
 {
@@ -131,6 +131,9 @@ int ipc_mem_init(struct ipc* ipc, unsigned int size)
 	printk("allock addr=0x%08x, size=%dK order=%d\n", (unsigned int)addr, size, get_order(size));
 	ipc->mem_base = addr;
 	ipc->mem_size = size;
+
+	addr += sizeof(struct share_mem_conf);
+	addr = IPC_ALIGN_ADDR(addr);
 	
 	ret = ipc_fblock_init(fblock, addr, IPC_FBLOCK_MEM_SIZE);
 	if(ret) {

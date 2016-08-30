@@ -26,6 +26,8 @@ static struct mutex usr_list_mutex;
 static unsigned long ipc_mem_addr = 0;
 static unsigned long ipc_mem_size = 0;
 
+struct share_mem_conf mem_conf;
+
 typedef long (*CMD_FUNC)(struct user_info*, unsigned int, unsigned long);
 
 static struct user_info* add_new_user(void)
@@ -70,7 +72,7 @@ static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 	struct user_info* p_info = file->private_data;
 	unsigned long size = vm_area->vm_start - vm_area->vm_end;
 	
-	pfn = __phys_to_pfn(virt_to_phys((void *)ipc_mem_addr));
+	pfn = page_to_pfn(virt_to_page((void *)ipc_mem_addr));
 	ret = remap_pfn_range(vm_area,
 					vm_area->vm_start,
 					pfn,
@@ -80,13 +82,13 @@ static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 		printk("remap_pfn_range error\n");
 		return -EAGAIN;
 	}
-
+	mem_conf.magic = SHARE_MEM_MAGIC;
 	p_info->user_addr = vm_area->vm_start;
 	
 	return 0;
 }
 
-static long cmd_connect(struct user_info* info, unsigned int arg1, unsigned long arg2)
+static long cmd_connect(struct user_info* info, unsigned int id, unsigned long arg)
 {
 	struct connect_args cdata;
 
@@ -94,7 +96,7 @@ static long cmd_connect(struct user_info* info, unsigned int arg1, unsigned long
 	
 	cdata.size = ipc_mem_size;
 	
-	if(copy_to_user((void *)arg2, &cdata, sizeof(cdata))) {
+	if(copy_to_user((void *)arg, &cdata, sizeof(cdata))) {
 		printk("copy_to_user() error\n");
 		return -EFAULT;
 	}
@@ -136,7 +138,7 @@ static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return -EFAULT;
 	}
 
-	return cmd_funcs[cmd](p_info, args.arg1, args.arg2);
+	return cmd_funcs[cmd](p_info, args.id, args.arg);
 }
 
 static const struct file_operations ipc_fops = {

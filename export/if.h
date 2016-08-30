@@ -1,9 +1,14 @@
 #ifndef __KERNEL_USER_IF_H__
 #define __KERNEL_USER_IF_H__
 
+struct share_mem_conf {
+#define SHARE_MEM_MAGIC	0x87876565
+	int magic;
+};
+
 struct user_args {
-	unsigned int arg1;
-	unsigned int arg2;
+	unsigned int id;
+	unsigned int arg;
 };
 
 enum CMD {
