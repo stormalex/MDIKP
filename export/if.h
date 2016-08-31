@@ -4,6 +4,8 @@
 struct share_mem_conf {
 #define SHARE_MEM_MAGIC	0x87876565
 	int magic;
+	unsigned long user_addr;
+	int size;
 };
 
 struct user_args {

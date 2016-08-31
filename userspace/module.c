@@ -1,18 +1,16 @@
 #include <stdio.h>
 
-
-#define __init void __attribute__ ((constructor)) 
-#define __exit void __attribute__ ((destructor))
-
 extern ipc_init();
 extern ipc_fini();
 
-module_init(void)
+void __attribute__((constructor)) module_init(void)
 {
+	printf("ipc userspace init\n");
 	ipc_init();
 }
 
-module_exit(void)
+void __attribute__((destructor)) module_exit(void)
 {
+	printf("ipc userspace fini\n");
 	ipc_fini();
 }

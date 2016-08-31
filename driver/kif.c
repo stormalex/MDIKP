@@ -26,7 +26,7 @@ static struct mutex usr_list_mutex;
 static unsigned long ipc_mem_addr = 0;
 static unsigned long ipc_mem_size = 0;
 
-struct share_mem_conf mem_conf;
+struct share_mem_conf* mem_conf;
 
 typedef long (*CMD_FUNC)(struct user_info*, unsigned int, unsigned long);
 
@@ -70,7 +70,7 @@ static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 	int ret = 0;
 	unsigned long pfn = 0;
 	struct user_info* p_info = file->private_data;
-	unsigned long size = vm_area->vm_start - vm_area->vm_end;
+	unsigned long size = vm_area->vm_end - vm_area->vm_start;
 	
 	pfn = page_to_pfn(virt_to_page((void *)ipc_mem_addr));
 	ret = remap_pfn_range(vm_area,
@@ -82,7 +82,8 @@ static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 		printk("remap_pfn_range error\n");
 		return -EAGAIN;
 	}
-	mem_conf.magic = SHARE_MEM_MAGIC;
+	mem_conf = (struct share_mem_conf*)ipc_mem_addr;
+	mem_conf->magic = SHARE_MEM_MAGIC;
 	p_info->user_addr = vm_area->vm_start;
 	
 	return 0;
