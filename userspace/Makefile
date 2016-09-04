@@ -1,6 +1,9 @@
 TARGET=libipc.so
 CC = arm-linux-gcc
 
+CFLAGS := $(CFLAGS)
+CFLAGS += -DUSER_SPACE
+
 INCDIR += -I../export
 
 SRCS := $(wildcard *.c)
@@ -10,15 +13,15 @@ $(TARGET):$(OBJS)
 	$(CC) $(OBJS) -shared -fPIC -o $(TARGET)
 
 %.o:%.c
-	$(CC) -c $< $(INCDIR) -o $@
+	$(CC) -c $< $(INCDIR) $(CFLAGS) -o $@
 
 %.d:%.c
 	@set -e; rm -f $@;\
 	$(CC) -MM $(INCDIR) $< > $@;\
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@ > $@; \
-	rm -f $@.$$$$
+	rm -f $@
 
-sinclude $(SRCS:.c=.d)
+include $(SRCS:.c=.d)
 
 .PHONY: clean 
 clean:

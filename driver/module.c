@@ -6,8 +6,9 @@
 #include <linux/device.h>
 #include <linux/uaccess.h>
 
-#include "def_ipc_common.h"
-#include "mem_wrapper.h"
+#include "k_common.h"
+#include "k_mem.h"
+#include "log.h"
 
 /*************function declaration**************/
 int ipc_cdev_init(struct ipc* ipc);
@@ -36,28 +37,28 @@ static int ipc_module_init(void)
 	
 	ipc.proc_dir = proc_mkdir(IPC_PROC_DIR, NULL);
 	if(!ipc.proc_dir) {
-		printk("proc_mkdir() error\n");
+		IPC_PRINT_DBG("proc_mkdir() error\n");
 		ret = -1;
 		goto exit1;
 	}
 	
 	ipc.mem_entry = create_proc_read_entry(IPC_PROC_MEM_ENTRY, 0400, ipc.proc_dir, dump_mem, NULL);
 	if(!ipc.mem_entry) {
-		printk("create_proc_read_entry() error\n");
+		IPC_PRINT_DBG("create_proc_read_entry() error\n");
 		ret = -1;
 		goto exit2;
 	}
 	
 	ret = ipc_mem_init(&ipc, IPC_MEM_SIZE);
 	if(ret) {
-		printk("ipc_mem_init() error\n");
+		IPC_PRINT_DBG("ipc_mem_init() error\n");
 		ret = -1;
 		goto exit3;
 	}
 	
 	ret = ipc_cdev_init(&ipc);
 	if(ret) {
-		printk("ipc_cdev_init() error\n");
+		IPC_PRINT_DBG("ipc_cdev_init() error\n");
 		ret = -1;
 		goto exit4;
 	}

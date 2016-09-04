@@ -9,8 +9,9 @@
 #include <linux/mutex.h>
 
 #include "util.h"
-#include "def_ipc_common.h"
+#include "k_common.h"
 #include "if.h"
+#include "log.h"
 
 struct user_info {
 	int connected;
@@ -34,10 +35,10 @@ static struct user_info* add_new_user(void)
 {
 	struct user_info* p_info = kmalloc(sizeof(*p_info), GFP_KERNEL);
 	if(!p_info) {
-		printk("kmalloc() failed\n");
+		IPC_PRINT_DBG("kmalloc() failed\n");
 		return NULL;
 	}
-	
+
 	memset(p_info, 0, sizeof(*p_info));
 
 	p_info->mm = current->mm;
@@ -79,7 +80,7 @@ static int ipc_mmap (struct file* file, struct vm_area_struct* vm_area)
 					size,
 					vm_area->vm_page_prot);
 	if(ret) {
-		printk("remap_pfn_range error\n");
+		IPC_PRINT_DBG("remap_pfn_range error\n");
 		return -EAGAIN;
 	}
 	mem_conf = (struct share_mem_conf*)ipc_mem_addr;
@@ -93,12 +94,12 @@ static long cmd_connect(struct user_info* info, unsigned int id, unsigned long a
 {
 	struct connect_args cdata;
 
-	printk("CALL connect\n");
+	IPC_PRINT_DBG("CALL connect\n");
 	
 	cdata.size = ipc_mem_size;
 	
 	if(copy_to_user((void *)arg, &cdata, sizeof(cdata))) {
-		printk("copy_to_user() error\n");
+		IPC_PRINT_DBG("copy_to_user() error\n");
 		return -EFAULT;
 	}
 
@@ -121,21 +122,21 @@ static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	struct user_args args;
 	struct user_info* p_info = file->private_data;
 
-	printk("CMD:0x%08x\n", cmd);
+	IPC_PRINT_DBG("CMD:0x%08x\n", cmd);
 
 	//command error
 	if(cmd >= CMD_MAX) {
-		printk("CMD error\n");
+		IPC_PRINT_DBG("CMD error\n");
 		return -EINVAL;
 	}
 
 	if(p_info->mm != current->mm) {
-		printk("Different process\n");
+		IPC_PRINT_DBG("Different process\n");
 		return -EACCES;
 	}
 
 	if(copy_from_user(&args, (void *)arg, sizeof(args))) {
-		printk("copy_from_user() error\n");
+		IPC_PRINT_DBG("copy_from_user() error\n");
 		return -EFAULT;
 	}
 
@@ -155,21 +156,21 @@ int ipc_cdev_init(struct ipc* ipc)
 	int ret = 0;
 	ipc->major = register_chrdev(0, "ipc", &ipc_fops);
 	if(ipc->major < 0) {
-		printk("register_chrdev() error\n");
+		IPC_PRINT_DBG("register_chrdev() error\n");
 		ret = -1;
 		goto exit1;
 	}
 	
 	ipc->class = class_create(THIS_MODULE, "ipc");
 	if(!ipc->class) {
-		printk("class_create() error\n");
+		IPC_PRINT_DBG("class_create() error\n");
 		ret = -1;
 		goto exit2;
 	}
 	
 	ipc->dev = device_create(ipc->class, NULL, MKDEV(ipc->major, 0), NULL, "ipc");
 	if(!ipc->dev) {
-		printk("device_create() error\n");
+		IPC_PRINT_DBG("device_create() error\n");
 		ret = -1;
 		goto exit3;
 	}
