@@ -23,6 +23,21 @@ $(TARGET):$(OBJS)
 	rm -f $@
 -include $(SRCS:.c=.d)
 
-.PHONY: clean 
+.PHONY: clean install
+
+install:
+	@if [ $(INSTALL_DIR) ];\
+	then\
+		if [ -d $(INSTALL_DIR) ];\
+		then\
+			if [ -f $(TARGET) ];\
+			then\
+				cp $(TARGET) $(INSTALL_DIR);\
+			fi;\
+		fi;\
+	else\
+		echo "NO INSTALL_DIR";\
+	fi;
+
 clean:
 	rm -f $(OBJS) $(TARGET) *.d

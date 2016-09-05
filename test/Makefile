@@ -11,9 +11,9 @@ all:
 				fi;\
 				cd ../;\
 		fi;\
-	done; 
+	done;
  
-.PHONY: clean
+.PHONY: clean install
  
 clean:
 	@for dir in `ls`;\
@@ -27,4 +27,18 @@ clean:
 				fi;\
 				cd ../;\
 		fi;\
-	done; 
+	done;
+
+install:
+	@for dir in `ls`;\
+	do\
+		if [ -d $$dir ];\
+		then\
+			cd $$dir;\
+				if [ -f Makefile ];\
+				then\
+					make install;\
+				fi;\
+				cd ../;\
+		fi;\
+	done;
