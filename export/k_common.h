@@ -11,8 +11,6 @@
 
 #define IPC_DEBUG
 
-//#define IPC_MEM_GUARD_SIZE (sizeof(unsigned long))
-
 //alloc memory size
 #define IPC_MEM_SIZE		1024*16
 #define IPC_FBLOCK_MEM_SIZE	1024*2
