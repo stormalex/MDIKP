@@ -1,6 +1,9 @@
 #include "msg.h"
 #include "log.h"
 
+struct msg* alloc_msg(int size, int wait);
+void free_msg(struct msg* p_msg);
+
 static void init_msg(struct msg* hdl, int size)
 {
 	hdl->size = size;

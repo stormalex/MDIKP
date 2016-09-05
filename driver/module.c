@@ -7,12 +7,15 @@
 #include <linux/uaccess.h>
 
 #include "k_common.h"
-#include "k_mem.h"
 #include "log.h"
 
 /*************function declaration**************/
 int ipc_cdev_init(struct ipc* ipc);
 void ipc_cdev_finalize(struct ipc* ipc);
+
+int ipc_mem_init(struct ipc* ipc, unsigned int size);
+void ipc_mem_finalize(struct ipc* ipc);
+int ipc_mem_dump(char *buf, int limit);
 
 static struct ipc ipc;
 

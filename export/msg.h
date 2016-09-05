@@ -31,7 +31,3 @@ inline int get_msg_src(struct msg* hdl)
 {
 	return hdl->src_qid;
 }
-
-
-struct msg* alloc_msg(int size, int wait);
-void free_msg(struct msg* p_msg);
