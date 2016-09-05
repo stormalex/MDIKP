@@ -6,7 +6,7 @@ static void init_msg(struct msg* hdl, int size)
 	hdl->size = size;
 }
 
-struct msg* alloc_msg(int size, int wait)
+struct msg* ipkc_alloc_msg(int size, int wait)
 {
 	int ret = 0;
 	int act_size = size + MSG_HSIZE;
@@ -25,7 +25,7 @@ struct msg* alloc_msg(int size, int wait)
 	return p_msg;
 }
 
-void free_msg(struct msg* p_msg)
+void ipkc_free_msg(struct msg* p_msg)
 {
 	ipc_mem_free(p_msg, p_msg->size);
 }
