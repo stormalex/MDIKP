@@ -15,11 +15,17 @@ struct user_args {
 
 enum CMD {
 	CMD_connect = 0,
+	CMD_alloc_msg,
 	CMD_MAX,
 };
 
 struct connect_args {
 	unsigned int size;
+};
+
+struct alloc_msg_args {
+	struct msg* hdl;
+	int size;
 };
 
 #endif //__KERNEL_USER_IF_H__

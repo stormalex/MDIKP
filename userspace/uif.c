@@ -95,3 +95,17 @@ int ipc_fini()
 	IPC_PRINT_DBG("IPC dynamic library finalize OK\n");
 	return ret;
 }
+
+struct msg* u_alloc_msg(int size, int wait)
+{
+	struct alloc_msg_args alloc_msg_args;
+	struct user_args args;
+	args.id = 0;
+	args.arg = (unsigned long)&alloc_msg_args;
+
+	if(ioctl(ipc_dev_fd, CMD_alloc_msg, &args) == -1) {
+		IPC_PRINT_ERROR("ioctl() failed");
+		return NULL;
+	}
+	return alloc_msg_args.hdl;
+}

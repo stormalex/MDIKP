@@ -11,6 +11,8 @@ static void init_msg(struct msg* hdl, int size)
 
 struct msg* ipkc_alloc_msg(int size, int wait)
 {
+	IPKC_CHECK_ALLOC_MSG(size, wait);
+
 	int ret = 0;
 	int act_size = size + MSG_HSIZE;
 	struct msg* p_msg = NULL;

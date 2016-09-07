@@ -114,6 +114,7 @@ static long cmd_connect(struct user_info* info, unsigned int id, unsigned long a
 
 CMD_FUNC cmd_funcs[CMD_MAX + 1] = {
 	cmd_connect,
+	cmd_alloc_msg,
 	NULL,
 };
 
