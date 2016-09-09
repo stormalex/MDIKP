@@ -47,11 +47,12 @@ inline int get_msg_src(struct msg* hdl)
 
 
 #ifdef KERNEL_SPACE
-
+#define IPKC_CHECK_SPACE(func, args...)	
 #endif
 #ifdef USER_SPACE
-extern struct msg* u_alloc_msg(int size, int wait);
-#define IPKC_CHECK_ALLOC_MSG(size, wait) {\
-		return u_alloc_msg(size, wait);}
+int u_ipkc_alloc_msg(void** hdl, int size, int wait);
+#define IPKC_CHECK_SPACE(func, args...) {\
+		return u_##func(args);\
+}
 
 #endif

@@ -8,6 +8,15 @@
 #include "if.h"
 #include "log.h"
 
+#define U_IOCTL(cmd, qid, data) ({\
+	int ret = 0;\
+	struct user_args args;\
+	args.id = qid;\
+	args.arg = (unsigned long)data;\
+	ret = _u_ioctl(cmd, &args);\
+	ret;\
+})
+
 static int ipc_dev_fd = 0;
 static void* ipc_map_mem = NULL;
 static int ipc_share_mem_size = 0;
@@ -96,16 +105,30 @@ int ipc_fini()
 	return ret;
 }
 
-struct msg* u_alloc_msg(int size, int wait)
+static int _u_ioctl(int cmd, struct user_args* args)
 {
-	struct alloc_msg_args alloc_msg_args;
-	struct user_args args;
-	args.id = 0;
-	args.arg = (unsigned long)&alloc_msg_args;
+	int ret = 0;
 
-	if(ioctl(ipc_dev_fd, CMD_alloc_msg, &args) == -1) {
+	ret = ioctl(ipc_dev_fd, cmd, args);
+	if(ret) {
 		IPC_PRINT_ERROR("ioctl() failed");
-		return NULL;
+		return -1;
 	}
-	return alloc_msg_args.hdl;
+
+	return ret;
+}
+
+int u_ipkc_alloc_msg(void** hdl, int size, int wait)
+{
+	int ret = 0;
+	struct alloc_msg_args alloc_msg_args;
+	alloc_msg_args.hdl = hdl;
+	alloc_msg_args.size = size;
+	alloc_msg_args.wait = wait;
+
+	*hdl = hdl;
+
+	ret = U_IOCTL(CMD_alloc_msg, 0, &alloc_msg_args);
+
+	return ret;
 }

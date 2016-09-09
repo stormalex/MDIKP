@@ -24,8 +24,10 @@ struct connect_args {
 };
 
 struct alloc_msg_args {
-	struct msg* hdl;
+	void** hdl;
 	int size;
+	int wait;
 };
+
 
 #endif //__KERNEL_USER_IF_H__
