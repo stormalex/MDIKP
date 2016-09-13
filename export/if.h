@@ -16,6 +16,7 @@ struct user_args {
 enum CMD {
 	CMD_connect = 0,
 	CMD_alloc_msg,
+	CMD_free_msg,
 	CMD_MAX,
 };
 
@@ -27,6 +28,10 @@ struct alloc_msg_args {
 	void** hdl;
 	int size;
 	int wait;
+};
+
+struct free_msg_args{
+	void* hdl;
 };
 
 

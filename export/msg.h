@@ -31,6 +31,7 @@ struct msg {
 	struct msg* next;
 	short size;
 	short flags;
+#define SRC_MAGIC	0x12345678
 	unsigned int src_qid;
 	char payload[0];
 };
@@ -51,6 +52,7 @@ inline int get_msg_src(struct msg* hdl)
 #endif
 #ifdef USER_SPACE
 int u_ipkc_alloc_msg(void** hdl, int size, int wait);
+int u_ipkc_free_msg(void* hdl);
 #define IPKC_CHECK_SPACE(func, args...) {\
 		return u_##func(args);\
 }

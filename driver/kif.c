@@ -13,6 +13,9 @@
 #include "if.h"
 #include "log.h"
 
+int ipkc_alloc_msg(void** hdl, int size, int wait);
+int ipkc_free_msg(void* hdl);
+
 struct user_info {
 	int connected;
 	pid_t pid;
@@ -27,9 +30,35 @@ static struct mutex usr_list_mutex;
 static unsigned long ipc_mem_addr = 0;
 static unsigned long ipc_mem_size = 0;
 
-struct share_mem_conf* mem_conf;
+static struct share_mem_conf* mem_conf;
+
+#define USER_SPACE_ADDR		(mem_conf->user_addr)
+#define KERNEL_SPACE_ADDR	(ipc_mem_addr)
+#define SPACE_SIZE			(ipc_mem_size)
 
 typedef long (*CMD_FUNC)(struct user_info*, unsigned int, unsigned long);
+
+inline unsigned long ker2usr(unsigned long hdl)
+{
+	if((KERNEL_SPACE_ADDR < hdl) && (hdl < (KERNEL_SPACE_ADDR + SPACE_SIZE))) {
+		return (USER_SPACE_ADDR + (hdl - KERNEL_SPACE_ADDR));
+	}
+	else {
+		IPC_PRINT_DBG("err kernel hdl=0x%08x\n", (unsigned int)hdl);
+		return 0;
+	}
+}
+
+inline unsigned long usr2ker(unsigned long hdl)
+{
+	if((USER_SPACE_ADDR < hdl) && (hdl < (USER_SPACE_ADDR + SPACE_SIZE))) {
+		return (KERNEL_SPACE_ADDR + (hdl - USER_SPACE_ADDR));
+	}
+	else {
+		IPC_PRINT_DBG("err user hdl=0x%08x\n", (unsigned int)hdl);
+		return 0;
+	}
+}
 
 static struct user_info* add_new_user(void)
 {
@@ -112,9 +141,52 @@ static long cmd_connect(struct user_info* info, unsigned int id, unsigned long a
 	return 0;
 }
 
+static long cmd_alloc_msg(struct user_info* info, unsigned int id, unsigned long arg)
+{
+	int ret = 0;
+	void* hdl = NULL;
+	struct alloc_msg_args adata;
+
+	if(copy_from_user(&adata, (void*)arg, sizeof(adata))) {
+		IPC_PRINT_DBG("copy_from_user() error\n");
+		return -EFAULT;
+	}
+
+	ret = ipkc_alloc_msg(&hdl, adata.size, adata.wait);
+	if(ret)
+	{
+		return -ENOMEM;
+	}
+
+	hdl = (void*)ker2usr((unsigned long)hdl);
+
+	*adata.hdl = hdl;
+
+	return ret;
+}
+
+static long cmd_free_msg(struct user_info* info, unsigned int id, unsigned long arg)
+{
+	int ret = 0;
+	void* hdl = NULL;
+	struct free_msg_args fdata;
+
+	if(copy_from_user(&fdata, (void*)arg, sizeof(fdata))) {
+		IPC_PRINT_DBG("copy_from_user() error\n");
+		return -EFAULT;
+	}
+
+	hdl = (void*)usr2ker((unsigned long)fdata.hdl);
+
+	ret = ipkc_free_msg(hdl);
+
+	return ret;
+}
+
 CMD_FUNC cmd_funcs[CMD_MAX + 1] = {
 	cmd_connect,
-	//cmd_alloc_msg,
+	cmd_alloc_msg,
+	cmd_free_msg,
 	NULL,
 };
 

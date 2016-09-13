@@ -126,9 +126,18 @@ int u_ipkc_alloc_msg(void** hdl, int size, int wait)
 	alloc_msg_args.size = size;
 	alloc_msg_args.wait = wait;
 
-	*hdl = hdl;
-
 	ret = U_IOCTL(CMD_alloc_msg, 0, &alloc_msg_args);
+
+	return ret;
+}
+
+int u_ipkc_free_msg(void* hdl)
+{
+	int ret = 0;
+	struct free_msg_args free_msg_args;
+	free_msg_args.hdl = hdl;
+
+	ret = U_IOCTL(CMD_free_msg, 0, &free_msg_args);
 
 	return ret;
 }

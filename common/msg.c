@@ -4,9 +4,10 @@
 struct msg* alloc_msg(int size, int wait);
 void free_msg(struct msg* p_msg);
 
-static void init_msg(struct msg* hdl, int size)
+static void init_msg(struct msg* msg, int size)
 {
-	hdl->size = size;
+	msg->size = size;
+	msg->src_qid = SRC_MAGIC;
 }
 
 static int _alloc_msg(void**hdl, int size, int wait)
@@ -25,7 +26,7 @@ static int _alloc_msg(void**hdl, int size, int wait)
 		init_msg(p_msg, act_size);
 	}
 	
-	*hdl = p_msg;
+	*hdl = p_msg->payload;
 
 	return ret;
 }
@@ -45,4 +46,13 @@ int ipkc_alloc_msg(void** hdl, int size, int wait)
 	ret = _alloc_msg(hdl, size, wait);
 
 	return ret;
+}
+
+int ipkc_free_msg(void* hdl)
+{
+	IPKC_CHECK_SPACE(ipkc_free_msg, hdl);
+
+	_free_msg(hdl);
+
+	return 0;
 }
