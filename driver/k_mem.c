@@ -81,6 +81,8 @@ void ipc_mem_free(void* hdl, int size)
 	void* addr = hdl - IPC_MEM_GUARD_SIZE;
 	int act_size = size + IPC_MEM_GUARD_SIZE * 2;
 	
+	IPC_PRINT_DBG("CALL ipc_mem_free(), size=%d\n", act_size);
+
 	check_guard_magic(addr, act_size);
 	
 	if(act_size <= IPC_FBLOCK_SIZE) {

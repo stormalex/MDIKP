@@ -10,6 +10,7 @@ static void init_msg(struct msg* msg, int size)
 	msg->src_qid = SRC_MAGIC;
 }
 
+#ifdef KERNEL_SPACE
 static int _alloc_msg(void**hdl, int size, int wait)
 {
 	int ret = 0;
@@ -36,23 +37,23 @@ static void _free_msg(void* hdl)
 	struct msg* p_msg = (struct msg*)hdl;
 	ipc_mem_free(p_msg, p_msg->size);
 }
-
+#endif
 int ipkc_alloc_msg(void** hdl, int size, int wait)
 {
 	int ret = 0;
 
 	IPKC_CHECK_SPACE(ipkc_alloc_msg, hdl, size, wait);
-
+#ifdef KERNEL_SPACE
 	ret = _alloc_msg(hdl, size, wait);
-
+#endif
 	return ret;
 }
 
 int ipkc_free_msg(void* hdl)
 {
 	IPKC_CHECK_SPACE(ipkc_free_msg, hdl);
-
+#ifdef KERNEL_SPACE
 	_free_msg(hdl);
-
+#endif
 	return 0;
 }

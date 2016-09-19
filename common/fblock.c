@@ -25,6 +25,7 @@ void* alloc_fblock(struct fblock* fblock, int wait)
 	if(fblock->list) {
 		block = LIST_DEL_HEAD(block, fblock->list);
 		fblock->num--;
+		fblock->size -= 32;
 	}
 	else {
 		if(!wait) {
@@ -51,6 +52,7 @@ void* alloc_fblock(struct fblock* fblock, int wait)
 			}
 			
 			fblock->num--;
+			fblock->size -= 32;
 		}
 	}
 out:
@@ -64,6 +66,8 @@ void free_fblock(struct fblock* fblock, void* addr)
 {
 	union block* block = addr;
 	
+	IPC_PRINT_DBG("CALL alloc_fblock()\n");
+	
 	mutex_lock(&fblock->mutex);
 	if(fblock->wtsk_list) {
 		struct wtsk* p_wtsk = NULL;
@@ -71,6 +75,7 @@ void free_fblock(struct fblock* fblock, void* addr)
 		mutex_unlock(&fblock->mutex);
 		p_wtsk->data = (unsigned long)block;
 		fblock->num++;
+		fblock->size += 32;
 		wakeup(p_wtsk->cookie);
 		return;
 	}

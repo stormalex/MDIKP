@@ -10,8 +10,12 @@ CFLAGS += $(INCDIR)
 SRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 
+LIBS := -lipc
+LIBS += -L../../userspace
+LIBS += -Wl,-rpath=./
+
 $(TARGET):$(OBJS)
-	$(CC) $(OBJS) -shared -fPIC -o $(TARGET)
+	$(CC) $(OBJS) -ldl $(LIBS) -o $(TARGET)
 
 %.o:%.c
 	$(CC) -c $< $(CFLAGS) -o $@

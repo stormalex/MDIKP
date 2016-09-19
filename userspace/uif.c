@@ -109,6 +109,8 @@ static int _u_ioctl(int cmd, struct user_args* args)
 {
 	int ret = 0;
 
+	IPC_PRINT_DBG("Call cmd=0x%08x\n", cmd);
+
 	ret = ioctl(ipc_dev_fd, cmd, args);
 	if(ret) {
 		IPC_PRINT_ERROR("ioctl() failed");
