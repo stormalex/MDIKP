@@ -1,8 +1,9 @@
 
 export INSTALL_DIR=$(PWD)/install
+DIRS := driver userspace test
 
 all:
-	@for dir in `ls`;\
+	@for dir in $(DIRS);\
 	do\
 		if [ -d $$dir ];\
 		then\

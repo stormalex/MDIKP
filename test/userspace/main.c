@@ -15,7 +15,7 @@ int mem_test(void)
 	if(ret){
 		return ret;
 	}
-	sleep(20);
+	sleep(3);
 
 	ret = ipkc_free_msg(hdl);
 
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	}
 
 	printf("Sleep...\n");
-	sleep(10);
+	sleep(3);
 	mem_test();
 
 	ret = dlclose(dl);

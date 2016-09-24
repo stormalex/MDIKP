@@ -28,7 +28,7 @@ static int u_connect(struct connect_args* cdata)
 	args.id = 0;
 	args.arg = (unsigned long)cdata;
 
-	if(ioctl(ipc_dev_fd, CMD_connect, &args) == -1) {
+	if(ioctl(ipc_dev_fd, IOCTL_CONNECT_REQ, &args) == -1) {
 		IPC_PRINT_ERROR("ioctl() failed");
 		return -1;
 	}
@@ -128,7 +128,9 @@ int u_ipkc_alloc_msg(void** hdl, int size, int wait)
 	alloc_msg_args.size = size;
 	alloc_msg_args.wait = wait;
 
-	ret = U_IOCTL(CMD_alloc_msg, 0, &alloc_msg_args);
+	IPC_PRINT_DBG("alloc msg size=%d\n", size);
+	
+	ret = U_IOCTL(IOCTL_ALLOC_MSG_REQ, 0, &alloc_msg_args);
 
 	return ret;
 }
@@ -139,7 +141,7 @@ int u_ipkc_free_msg(void* hdl)
 	struct free_msg_args free_msg_args;
 	free_msg_args.hdl = hdl;
 
-	ret = U_IOCTL(CMD_free_msg, 0, &free_msg_args);
+	ret = U_IOCTL(IOCTL_FREE_MSG_REQ, 0, &free_msg_args);
 
 	return ret;
 }

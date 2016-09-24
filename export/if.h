@@ -20,6 +20,15 @@ enum CMD {
 	CMD_MAX,
 };
 
+#define IOCTL_DEV_MAGIC		0x1234
+#define IOCTL_CONSTRUCT_CMD(cmd)	(IOCTL_DEV_MAGIC << 16 | cmd)
+#define IOCTL_DESTRUCT_CMD(cmd)		(0x00001111 & cmd)
+
+#define IOCTL_REQ_MAGIC	'i'
+#define IOCTL_CONNECT_REQ	_IOR(IOCTL_REQ_MAGIC, CMD_connect, struct connect_args)
+#define IOCTL_ALLOC_MSG_REQ	_IOW(IOCTL_REQ_MAGIC, CMD_alloc_msg, struct alloc_msg_args)
+#define IOCTL_FREE_MSG_REQ	_IOW(IOCTL_REQ_MAGIC, CMD_free_msg, struct free_msg_args)
+
 struct connect_args {
 	unsigned int size;
 };

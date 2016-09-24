@@ -17,6 +17,9 @@ static int _alloc_msg(void**hdl, int size, int wait)
 	int act_size = size + MSG_HSIZE;
 	struct msg* p_msg = NULL;
 	*hdl = NULL;
+	
+	IPC_PRINT_DBG("size = %d\n", act_size);
+	
 	ret = ipc_mem_alloc((void **)&p_msg, act_size, wait);
 	if(ret) {
 		IPC_PRINT_DBG("ipc_mem_alloc() failed!\n");
@@ -27,6 +30,8 @@ static int _alloc_msg(void**hdl, int size, int wait)
 		init_msg(p_msg, act_size);
 	}
 	
+	IPC_PRINT_DBG("msg.size=%d\n", p_msg->size);
+	
 	*hdl = p_msg->payload;
 
 	return ret;
@@ -35,6 +40,11 @@ static int _alloc_msg(void**hdl, int size, int wait)
 static void _free_msg(void* hdl)
 {
 	struct msg* p_msg = (struct msg*)hdl;
+	hdl -= MSG_HSIZE;
+	p_msg = hdl;
+	
+	IPC_PRINT_DBG("msg.size=%d\n", p_msg->size);
+	
 	ipc_mem_free(p_msg, p_msg->size);
 }
 #endif

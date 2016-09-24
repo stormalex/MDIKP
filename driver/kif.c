@@ -125,6 +125,9 @@ static long cmd_connect(struct user_info* info, unsigned int id, unsigned long a
 
 	IPC_PRINT_DBG("CALL connect\n");
 	
+	if(info->connected == 1)
+		return 0;
+	
 	cdata.size = ipc_mem_size;
 	
 	if(copy_to_user((void *)arg, &cdata, sizeof(cdata))) {
@@ -151,7 +154,7 @@ static long cmd_alloc_msg(struct user_info* info, unsigned int id, unsigned long
 		IPC_PRINT_DBG("copy_from_user() error\n");
 		return -EFAULT;
 	}
-
+	IPC_PRINT_DBG("size = %d\n", adata.size);
 	ret = ipkc_alloc_msg(&hdl, adata.size, adata.wait);
 	if(ret)
 	{
@@ -194,11 +197,12 @@ static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	struct user_args args;
 	struct user_info* p_info = file->private_data;
-
-	IPC_PRINT_DBG("CMD:0x%08x\n", cmd);
+	unsigned int nr = _IOC_NR(cmd);
+	
+	IPC_PRINT_DBG("CMD:0x%08x\n", nr);
 
 	//command error
-	if(cmd >= CMD_MAX) {
+	if(nr >= CMD_MAX) {
 		IPC_PRINT_DBG("CMD error\n");
 		return -EINVAL;
 	}
@@ -213,7 +217,7 @@ static long ipc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		return -EFAULT;
 	}
 
-	return cmd_funcs[cmd](p_info, args.id, args.arg);
+	return cmd_funcs[nr](p_info, args.id, args.arg);
 }
 
 static const struct file_operations ipc_fops = {

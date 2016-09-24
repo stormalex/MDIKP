@@ -58,6 +58,8 @@ void* alloc_fblock(struct fblock* fblock, int wait)
 out:
 	mutex_unlock(&fblock->mutex);
 
+	IPC_PRINT_DBG("EXIT alloc_fblock() addr=0x%08x\n", (unsigned int)block);
+	
 	return block;
 }
 EXPORT_SYMBOL(alloc_fblock);
@@ -66,10 +68,11 @@ void free_fblock(struct fblock* fblock, void* addr)
 {
 	union block* block = addr;
 	
-	IPC_PRINT_DBG("CALL alloc_fblock()\n");
+	IPC_PRINT_DBG("CALL free_fblock() addr=0x%08x\n", (unsigned int)addr);
 	
 	mutex_lock(&fblock->mutex);
 	if(fblock->wtsk_list) {
+		
 		struct wtsk* p_wtsk = NULL;
 		p_wtsk = LIST_DEL_HEAD(p_wtsk, fblock->wtsk_list);
 		mutex_unlock(&fblock->mutex);
@@ -79,8 +82,9 @@ void free_fblock(struct fblock* fblock, void* addr)
 		wakeup(p_wtsk->cookie);
 		return;
 	}
-	
 	LIST_ADD_HEAD(block, fblock->list);
+	fblock->num++;
+	fblock->size += 32;
 	mutex_unlock(&fblock->mutex);
 	return;
 }
