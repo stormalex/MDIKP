@@ -33,7 +33,7 @@ static inline void init_guard_magic(void* addr, int size)
 static inline void check_guard_magic(void* addr, int size)
 {
 	unsigned long* addr1 = addr;
-	unsigned long* addr2 = addr + size + IPC_MEM_GUARD_SIZE*4;
+	unsigned long* addr2 = addr + size - IPC_MEM_GUARD_SIZE;
 	
 	if(*addr1 != IPC_MEM_GRARD_MAGIC_A) {
 		IPC_PRINT_DBG("MEM GUARD MAGIC A ERROR!!!\n");
@@ -51,6 +51,7 @@ int ipc_mem_alloc(void** hdl, int size, int wait)
 	int ret = 0;
 	void* addr = 0;
 	int act_size = size + IPC_MEM_GUARD_SIZE * 2;
+	int practical_size = act_size;
 	IPC_PRINT_DBG("CALL ipc_mem_alloc(), size=%d, wait=%d\n", act_size, wait);
 	
 	if(act_size <= IPC_FBLOCK_SIZE) {
@@ -74,9 +75,9 @@ int ipc_mem_alloc(void** hdl, int size, int wait)
 	}
 	
 	*hdl = addr + IPC_MEM_GUARD_SIZE;
-	init_guard_magic(addr, act_size);
+	init_guard_magic(addr, practical_size);
 	
-	IPC_PRINT_DBG("addr=0x%08x, hdl=0x%08x\n", (unsigned int)addr, (unsigned int)*hdl);
+	IPC_PRINT_DBG("addr=0x%08x, hdl=0x%08x size=%d\n", (unsigned int)addr, (unsigned int)*hdl, practical_size);
 	
 	return ret;
 }
@@ -85,10 +86,11 @@ EXPORT_SYMBOL(ipc_mem_alloc);
 void ipc_mem_free(void* hdl, int size)
 {
 	void* addr = hdl - IPC_MEM_GUARD_SIZE;
+	unsigned int act_size = size + (IPC_MEM_GUARD_SIZE*2);
+	
+	IPC_PRINT_DBG("CALL ipc_mem_free(), hdl=0x%08x, size=%d\n", (unsigned int)addr, act_size);
 
-	IPC_PRINT_DBG("CALL ipc_mem_free(), hdl=0x%08x, size=%d\n", (unsigned int)hdl, size);
-
-	check_guard_magic(addr, size);
+	check_guard_magic(addr, act_size);
 	
 	if(act_size <= IPC_FBLOCK_SIZE) {
 		free_fblock(fblock, addr);
