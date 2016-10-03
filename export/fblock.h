@@ -15,18 +15,18 @@
 #define IPC_FBLOCK_SIZE  (IPC_BLOCK_SIZE + (IPC_MEM_GUARD_SIZE * 2))
 
 union block {
-	union block* next;
-	char data[IPC_FBLOCK_SIZE];
+    union block* next;
+    char data[IPC_FBLOCK_SIZE];
 };
 
 struct fblock {
-	unsigned long addr;
-	unsigned int total_size;
-	unsigned int size;
-	struct mutex mutex;
-	struct wtsk* wtsk_list;
-	union block* list;
-	unsigned int num;
+    unsigned long addr;
+    unsigned int total_size;
+    unsigned int size;
+    struct mutex mutex;
+    struct wtsk* wtsk_list;
+    union block* list;
+    unsigned int num;
 };
 
 int ipc_fblock_init(struct fblock* fblock, unsigned long addr, unsigned int size);
