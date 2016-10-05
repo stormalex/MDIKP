@@ -1,4 +1,5 @@
 #include "vblock.h"
+#include "util.h"
 #include "log.h"
 
 int ipc_vblock_dump(struct vblock* vblock, char *buf, int limit)
@@ -14,11 +15,69 @@ EXPORT_SYMBOL(ipc_vblock_dump);
 
 void* alloc_vpool(struct vblock* vpool, int size, int wait)
 {
-    return NULL;
+    struct slot *cur;
+    struct slot **prve;
+    struct slot *new_slot = NULL;
+    void *addr;
+    
+    mutex_lock(&vpool->mutex);
+    if(size > vpool->total_size) {
+        return NULL;
+        mutex_unlock(&vpool->mutex);
+    }
+    
+retry:
+    cur = vpool->next;
+    prve = &cur;
+    while(*prve) {
+        if(cur->size > size) {
+            addr = cur;
+            addr += size;
+            new_slot = addr;
+            new_slot->next = cur->next;
+            new_slot->size = cur->size - size;
+            *prve = new_slot;
+            
+            vpool->size -= size;
+            goto out;
+        }
+        else if(cur->size == size) {
+            *prve = cur->next;
+            
+            vpool->size -= size;
+            goto out;
+        }
+        prve = &((*prve)->next);
+        cur = *prve;
+    }
+    
+    if(!wait) {
+        cur = NULL;
+        goto out;
+    }
+    
+    {
+        struct wtsk wtsk = {
+                .data = size,
+        };
+        add_wtsk_list_tail(&wtsk, &vpool->wtsk_list);
+        mutex_unlock(&vpool->mutex);
+        prepare_sleep(&wtsk.cookie);
+        do_sleep(wtsk.cookie, wait);
+        mutex_lock(&vpool->mutex);
+        goto retry;
+    }
+out:
+    mutex_unlock(&vpool->mutex);
+
+    IPC_PRINT_DBG("EXIT alloc_vpool() addr=0x%08x\n", (unsigned int)cur);
+    return (void *)cur;
 }
 
-void free_vpool(struct vblock* vpool, void* addr)
+void free_vpool(struct vblock* vpool, void* addr, int size)
 {
+
+    
     return;
 }
 
@@ -35,10 +94,13 @@ int ipc_vblock_init(struct vblock* vblock, unsigned long addr, unsigned int size
     vblock->total_size = size;
     vblock->size = size;
     vblock->addr = addr;
+    vblock->addr_end = addr + size;
     
     slot = (struct slot*)addr;
     slot->next = NULL;
     slot->size = size;
+    
+    vblock->next = (struct slot *)addr;
     
     return 0;
 }

@@ -96,7 +96,7 @@ void ipc_mem_free(void* hdl, int size)
         free_fblock(fblock, addr);
     }
     else {
-        free_vpool(vpool, addr);
+        free_vpool(vpool, addr, act_size);
     }
 }
 EXPORT_SYMBOL(ipc_mem_free);
