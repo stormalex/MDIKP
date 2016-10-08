@@ -76,7 +76,37 @@ out:
 
 void free_vpool(struct vblock* vpool, void* addr, int size)
 {
-
+    struct slot *new_slot = addr;
+    struct slot *cur = vpool->next;
+    struct slot **prve = &cur;
+    
+    if(((unsigned long)addr >= vpool->addr_end) && ((unsigned long)addr < vpool->addr))
+        return;
+    
+    new_slot->size = size;
+    
+    while(*prve) {
+        if(addr < (void *)(vpool->next)) {      //should be first node
+            new_slot->next = vpool->next;
+            vpool->next = new_slot;
+        }
+        else if(cur->next == NULL) {     //should be last node
+            cur->next = new_slot;
+            new_slot->next = NULL;
+        }
+        else if((addr < (void*)cur) && (addr > (void*)prve)) {
+            *prve = new_slot;
+            new_slot->next = cur;
+        }
+        
+        //boundary
+        
+        
+        prve = &((*prve)->next);
+        cur = *prve;
+    }
+    
+    //wake up
     
     return;
 }
