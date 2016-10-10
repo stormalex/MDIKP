@@ -58,12 +58,18 @@ retry:
     
     {
         struct wtsk wtsk = {
-                .data = size,
+                .data = 0,
         };
         add_wtsk_list_tail(&wtsk, &vpool->wtsk_list);
         mutex_unlock(&vpool->mutex);
         prepare_sleep(&wtsk.cookie);
         do_sleep(wtsk.cookie, wait);
+        if(wtsk.data == 0) {
+            del_wtsk_list(&wtsk, &vpool->wtsk_list);
+            cur = NULL;
+            goto out;
+        }
+        
         mutex_lock(&vpool->mutex);
         goto retry;
     }
@@ -77,36 +83,57 @@ out:
 void free_vpool(struct vblock* vpool, void* addr, int size)
 {
     struct slot *new_slot = addr;
-    struct slot *cur = vpool->next;
-    struct slot **prve = &cur;
+    struct slot *cur = NULL;
+    struct slot **prve = &vpool->next;
     
     if(((unsigned long)addr >= vpool->addr_end) && ((unsigned long)addr < vpool->addr))
         return;
     
     new_slot->size = size;
     
+    mutex_lock(&vpool->mutex);
+    
     while(*prve) {
-        if(addr < (void *)(vpool->next)) {      //should be first node
-            new_slot->next = vpool->next;
-            vpool->next = new_slot;
+        cur = *prve;
+        
+        if(addr > ((void*)cur + cur->size)) {
+            prve = &((*prve)->next);
+            continue;
         }
-        else if(cur->next == NULL) {     //should be last node
-            cur->next = new_slot;
-            new_slot->next = NULL;
-        }
-        else if((addr < (void*)cur) && (addr > (void*)prve)) {
+        
+        if((addr + size) == (void*)cur) {
+            new_slot->next = cur->next;
+            new_slot->size = size + cur->size;
             *prve = new_slot;
-            new_slot->next = cur;
+            break;
+        }
+        else if(((void*)cur + cur->size) == addr) {
+            struct slot* next = cur->next;
+            cur->size = cur->size + size;
+            if(((void*)next) == addr) {
+                cur->size = cur->size + next->size;
+                cur->next = next->next;
+            }
+            break;
         }
         
-        //boundary
-        
+        if(addr > ((void*)cur + cur->size)) {
+            new_slot->next = cur->next;
+            cur->next = new_slot;
+            break;
+        }
         
         prve = &((*prve)->next);
-        cur = *prve;
     }
     
     //wake up
+    while(vpool->wtsk_list) {
+        struct wtsk* wtsk = LIST_DEL_HEAD(wtsk, vpool->wtsk_list);
+        wtsk->data = 1;
+        wakeup(&wtsk->cookie);
+    }
+    
+    mutex_unlock(&vpool->mutex);
     
     return;
 }

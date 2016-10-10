@@ -5,7 +5,7 @@
 #include "if.h"
 #include "ipkc.h"
 
-int mem_test(void)
+int fblock_mem_test(void)
 {
     int ret = 0;
     void* hdl[51];
@@ -16,6 +16,37 @@ int mem_test(void)
     memset(hdl, 0, sizeof(hdl));
     for(i = 0; i < 51; i++) {
         ret = ipkc_alloc_msg(&hdl[i], 20, 0);
+        if(ret){
+            printf("ipkc_alloc_msg() failed\n");
+            return ret;
+        }
+        memset(hdl[i], 'A', 20);
+        printf("[%d]msg hdl=0x%08x\n", i+1, (unsigned int)hdl[i]);
+    }
+
+    for(i = 0; i < 51; i++) {
+        ret = ipkc_free_msg(hdl[i]);
+        if(ret){
+            printf("ipkc_free_msg() failed\n");
+            return ret;
+        }
+    }
+
+    printf("Exit mem_test\n");
+    return ret;
+}
+
+int vpool_mem_test(void)
+{
+    int ret = 0;
+    void* hdl[51];
+    int i;
+    
+    printf("Enter mem_test\n");
+
+    memset(hdl, 0, sizeof(hdl));
+    for(i = 0; i < 51; i++) {
+        ret = ipkc_alloc_msg(&hdl[i], 100, 0);
         if(ret){
             printf("ipkc_alloc_msg() failed\n");
             return ret;
@@ -50,7 +81,8 @@ int main(int argc, char* argv[])
     }
 
     printf("Sleep...\n");
-    mem_test();
+    fblock_mem_test();
+    vpool_mem_test();
 
     ret = dlclose(dl);
     if(ret){
