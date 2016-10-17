@@ -5,13 +5,17 @@
 #include "if.h"
 #include "ipkc.h"
 
+//#define FBLOCK_MEM_TEST
+#define VPOOL_MEM_TEST
+
+
 int fblock_mem_test(void)
 {
     int ret = 0;
     void* hdl[51];
     int i;
     
-    printf("Enter mem_test\n");
+    printf("Enter fblock_mem_test\n");
 
     memset(hdl, 0, sizeof(hdl));
     for(i = 0; i < 51; i++) {
@@ -32,7 +36,7 @@ int fblock_mem_test(void)
         }
     }
 
-    printf("Exit mem_test\n");
+    printf("Exit fblock_mem_test\n");
     return ret;
 }
 
@@ -42,11 +46,11 @@ int vpool_mem_test(void)
     void* hdl[51];
     int i;
     
-    printf("Enter mem_test\n");
+    printf("Enter vpool_mem_test\n");
 
     memset(hdl, 0, sizeof(hdl));
-    for(i = 0; i < 51; i++) {
-        ret = ipkc_alloc_msg(&hdl[i], 100, 0);
+    for(i = 0; i < 4; i++) {
+        ret = ipkc_alloc_msg(&hdl[i], 236, 0);
         if(ret){
             printf("ipkc_alloc_msg() failed\n");
             return ret;
@@ -55,7 +59,7 @@ int vpool_mem_test(void)
         printf("[%d]msg hdl=0x%08x\n", i+1, (unsigned int)hdl[i]);
     }
 
-    for(i = 0; i < 51; i++) {
+    for(i = 0; i < 4; i++) {
         ret = ipkc_free_msg(hdl[i]);
         if(ret){
             printf("ipkc_free_msg() failed\n");
@@ -63,7 +67,7 @@ int vpool_mem_test(void)
         }
     }
 
-    printf("Exit mem_test\n");
+    printf("Exit vpool_mem_test\n");
     return ret;
 }
 
@@ -73,7 +77,6 @@ int main(int argc, char* argv[])
     void* dl = NULL;
 
     printf("Open libipc.so\n");
-    sleep(2);
     dl = dlopen("./libipc.so", RTLD_LAZY);
     if(!dl) {
         fprintf(stderr, "%s\n", dlerror());
@@ -81,9 +84,12 @@ int main(int argc, char* argv[])
     }
 
     printf("Sleep...\n");
+#ifdef FBLOCK_MEM_TEST
     fblock_mem_test();
+#endif
+#ifdef VPOOL_MEM_TEST
     vpool_mem_test();
-
+#endif
     ret = dlclose(dl);
     if(ret){
         fprintf(stderr, "%s\n", dlerror());

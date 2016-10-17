@@ -2,13 +2,25 @@
 #include "util.h"
 #include "log.h"
 
-int ipc_vblock_dump(struct vblock* vblock, char *buf, int limit)
+int ipc_vblock_dump(struct vblock* vpool, char *buf, int limit)
 {
     int len = 0;
+    int i = 0;
+    struct slot *cur = NULL;
     
-    len += sprintf(buf + len, "vblock========\n");
-    len += sprintf(buf + len, "base=0x%08x\ntotal_size=%d\nsize=%d\n", (unsigned int)vblock->addr, vblock->total_size, vblock->size);
+    len += sprintf(buf + len, "vpool========\n");
+    len += sprintf(buf + len, "base=0x%08x\ntotal_size=%d\nsize=%d\n", (unsigned int)vpool->addr, vpool->total_size, vpool->size);
     
+    mutex_lock(&vpool->mutex);
+    cur = vpool->next;
+    while(cur){
+        i++;
+        len += sprintf(buf + len, "[%d]SLOT########\n", i);
+        len += sprintf(buf + len, "%p %d\n", cur, cur->size);
+        len += sprintf(buf + len, "SLOT########\n");
+        cur = cur->next;
+    }
+    mutex_unlock(&vpool->mutex);
     return len;
 }
 EXPORT_SYMBOL(ipc_vblock_dump);
@@ -17,8 +29,7 @@ void* alloc_vpool(struct vblock* vpool, int size, int wait)
 {
     struct slot *cur;
     struct slot **prve;
-    struct slot *new_slot = NULL;
-    void *addr;
+    void *addr = NULL;
     
     mutex_lock(&vpool->mutex);
     if(size > vpool->total_size) {
@@ -31,28 +42,24 @@ retry:
     prve = &cur;
     while(*prve) {
         if(cur->size > size) {
-            addr = cur;
-            addr += size;
-            new_slot = addr;
-            new_slot->next = cur->next;
-            new_slot->size = cur->size - size;
-            *prve = new_slot;
+            cur->size -= size;
+            addr = (void *)cur;
+            addr = addr + cur->size;
             
             vpool->size -= size;
             goto out;
         }
         else if(cur->size == size) {
             *prve = cur->next;
-            
+            addr = (void*)cur;
             vpool->size -= size;
             goto out;
         }
-        prve = &((*prve)->next);
+        prve = &cur->next;
         cur = *prve;
     }
     
     if(!wait) {
-        cur = NULL;
         goto out;
     }
     
@@ -64,20 +71,18 @@ retry:
         mutex_unlock(&vpool->mutex);
         prepare_sleep(&wtsk.cookie);
         do_sleep(wtsk.cookie, wait);
-        if(wtsk.data == 0) {
+        mutex_lock(&vpool->mutex);
+        if(wtsk.data == 1) {
             del_wtsk_list(&wtsk, &vpool->wtsk_list);
             cur = NULL;
-            goto out;
+            goto retry;
         }
-        
-        mutex_lock(&vpool->mutex);
-        goto retry;
     }
 out:
     mutex_unlock(&vpool->mutex);
 
-    IPC_PRINT_DBG("EXIT alloc_vpool() addr=0x%08x\n", (unsigned int)cur);
-    return (void *)cur;
+    IPC_PRINT_DBG("EXIT alloc_vpool() addr=%p\n", addr);
+    return addr;
 }
 
 void free_vpool(struct vblock* vpool, void* addr, int size)
@@ -97,7 +102,7 @@ void free_vpool(struct vblock* vpool, void* addr, int size)
         cur = *prve;
         
         if(addr > ((void*)cur + cur->size)) {
-            prve = &((*prve)->next);
+            prve = &cur->next;
             continue;
         }
         
@@ -105,7 +110,7 @@ void free_vpool(struct vblock* vpool, void* addr, int size)
             new_slot->next = cur->next;
             new_slot->size = size + cur->size;
             *prve = new_slot;
-            break;
+            goto out;
         }
         else if(((void*)cur + cur->size) == addr) {
             struct slot* next = cur->next;
@@ -114,18 +119,21 @@ void free_vpool(struct vblock* vpool, void* addr, int size)
                 cur->size = cur->size + next->size;
                 cur->next = next->next;
             }
-            break;
+            goto out;
         }
-        
-        if(addr > ((void*)cur + cur->size)) {
+        else {
             new_slot->next = cur->next;
             cur->next = new_slot;
-            break;
+            goto out;
         }
         
-        prve = &((*prve)->next);
+        prve = &cur->next;
     }
-    
+    cur = addr;
+    cur->size = size;
+    cur->next = *prve;
+
+out:
     //wake up
     while(vpool->wtsk_list) {
         struct wtsk* wtsk = LIST_DEL_HEAD(wtsk, vpool->wtsk_list);
