@@ -2,7 +2,7 @@
 #define __LOG_H__
 
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef KERNEL_SPACE
 #ifdef DEBUG

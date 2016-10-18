@@ -6,8 +6,23 @@
 #include "ipkc.h"
 
 //#define FBLOCK_MEM_TEST
-#define VPOOL_MEM_TEST
+//#define VPOOL_MEM_TEST
 
+
+void test(int index)
+{
+#define L1_BITS 6
+#define L2_BITS 3
+#define L3_BITS 3
+#define L4_BITS 3
+    void* entries[1<<L1_BITS];
+    int l1 = (index >> (L2_BITS + L3_BITS + L4_BITS)) & ((1<<L1_BITS) - 1);
+    int l2 = (index >> (L3_BITS + L4_BITS)) & ((1<<L2_BITS) - 1);
+    int l3 = (index >> (L4_BITS)) & ((1<<L3_BITS) - 1);
+    int l4 = (index) & ((1<<L4_BITS) - 1);
+    
+    printf("index=%d l1=%d l2=%d l3=%d l4=%d\n", index, l1, l2, l3, l4);
+}
 
 int fblock_mem_test(void)
 {
@@ -76,6 +91,11 @@ int main(int argc, char* argv[])
     int ret = 0;
     void* dl = NULL;
 
+    test(1);
+    test(100);
+    test(10000);
+    test(0xffffffff);
+    
     printf("Open libipc.so\n");
     dl = dlopen("./libipc.so", RTLD_LAZY);
     if(!dl) {

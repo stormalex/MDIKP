@@ -102,11 +102,13 @@ void free_vpool(struct vblock* vpool, void* addr, int size)
         cur = *prve;
         
         if(addr > ((void*)cur + cur->size)) {
+            IPC_PRINT_ERR("1\n");
             prve = &cur->next;
             continue;
         }
         
         if((addr + size) == (void*)cur) {
+            IPC_PRINT_ERR("2\n");
             new_slot->next = cur->next;
             new_slot->size = size + cur->size;
             *prve = new_slot;
@@ -115,13 +117,16 @@ void free_vpool(struct vblock* vpool, void* addr, int size)
         else if(((void*)cur + cur->size) == addr) {
             struct slot* next = cur->next;
             cur->size = cur->size + size;
-            if(((void*)next) == addr) {
+            IPC_PRINT_ERR("3 next=%p addr=%p (addr+size)=%p\n", next, addr, (addr + size));
+            if(((void*)next) == (addr + size)) {
+                IPC_PRINT_ERR("3.5\n");
                 cur->size = cur->size + next->size;
                 cur->next = next->next;
             }
             goto out;
         }
         else {
+            IPC_PRINT_ERR("4\n");
             new_slot->next = cur->next;
             cur->next = new_slot;
             goto out;
@@ -129,10 +134,11 @@ void free_vpool(struct vblock* vpool, void* addr, int size)
         
         prve = &cur->next;
     }
+    IPC_PRINT_ERR("5\n");
     cur = addr;
     cur->size = size;
     cur->next = *prve;
-
+    *prve = cur;
 out:
     //wake up
     while(vpool->wtsk_list) {

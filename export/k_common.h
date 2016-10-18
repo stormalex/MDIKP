@@ -12,8 +12,8 @@
 #define IPC_DEBUG
 
 //alloc memory size
-#define IPC_MEM_SIZE            1024*16
-#define IPC_FBLOCK_MEM_SIZE     1024*2
+#define IPC_MEM_SIZE            1024*100
+#define IPC_FBLOCK_MEM_SIZE     1024*30
 
 #define IPC_ALIGN_ADDR(x)       ((x+0x03)&(~0x03))
 
