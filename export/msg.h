@@ -1,3 +1,5 @@
+#ifndef __MSG_H__
+#define __MSG_H__
 #ifdef KERNEL_SPACE
 
 #include <linux/fs.h>
@@ -9,6 +11,9 @@
 
 #endif
 
+//---------------------------------------------------------
+// msg
+//---------------------------------------------------------
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
@@ -24,8 +29,8 @@
 #define msg2mem(msg)    (&(msg->payload))
 
 //kernel or userspace interface
-extern int ipc_mem_alloc(void** hdl, int size, int wait);
-extern void ipc_mem_free(void* hdl, int size);
+extern int ipc_mem_alloc_msg(void** hdl, int size, int wait);
+extern void ipc_mem_free_msg(void* hdl, int size);
 
 struct msg {
     struct msg* next;
@@ -58,3 +63,23 @@ int u_ipkc_free_msg(void* hdl);
 }
 
 #endif
+
+//---------------------------------------------------------
+// msgq
+//---------------------------------------------------------
+
+#define MSGQ_NUM    (256)
+
+struct msgq {
+    int flag;
+    struct msg* msg_list;
+    void* async_cb;
+    void* sync_cb;
+};
+
+//kernel or userspace interface
+extern void* alloc_msgq(void);
+extern void free_msgq(void* hdl);
+
+
+#endif //__MSG_H__

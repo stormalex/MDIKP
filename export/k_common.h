@@ -9,8 +9,6 @@
 #include <linux/device.h>
 #include <linux/proc_fs.h>
 
-#define IPC_DEBUG
-
 //alloc memory size
 #define IPC_MEM_SIZE            1024*100
 #define IPC_FBLOCK_MEM_SIZE     1024*30

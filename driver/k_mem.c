@@ -15,11 +15,29 @@
 static struct vblock* vpool = NULL;
 static struct fblock* fblock = NULL;
 
-int ipc_mem_alloc(void** hdl, int size, int wait)
+void* alloc_msgq(void)
+{
+    void* addr = 0;
+    addr = alloc_fblock(fblock, 0);
+    if(!addr) {
+        IPC_PRINT_ERR("alloc_msgq() failed\n");
+        return NULL;
+    }
+    return (struct msgq*)addr;
+}
+EXPORT_SYMBOL(alloc_msgq);
+
+void free_msgq(void* hdl)
+{
+    free_fblock(fblock, hdl);
+}
+EXPORT_SYMBOL(free_msgq);
+
+int ipc_mem_alloc_msg(void** hdl, int size, int wait)
 {
     int ret = 0;
     void* addr = 0;
-    IPC_PRINT_DBG("CALL ipc_mem_alloc(), size=%d, wait=%d\n", size, wait);
+    IPC_PRINT_DBG("CALL ipc_mem_alloc_msg(), size=%d, wait=%d\n", size, wait);
     
     if(size <= IPC_FBLOCK_SIZE) {
         size = IPC_FBLOCK_SIZE;
@@ -47,9 +65,9 @@ int ipc_mem_alloc(void** hdl, int size, int wait)
     
     return ret;
 }
-EXPORT_SYMBOL(ipc_mem_alloc);
+EXPORT_SYMBOL(ipc_mem_alloc_msg);
 
-void ipc_mem_free(void* hdl, int size)
+void ipc_mem_free_msg(void* hdl, int size)
 {
     if(size <= IPC_FBLOCK_SIZE) {
         free_fblock(fblock, hdl);
@@ -58,7 +76,7 @@ void ipc_mem_free(void* hdl, int size)
         free_vpool(vpool, hdl, size);
     }
 }
-EXPORT_SYMBOL(ipc_mem_free);
+EXPORT_SYMBOL(ipc_mem_free_msg);
 
 int ipc_mem_dump(char *buf, int limit)
 {
