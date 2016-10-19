@@ -65,7 +65,7 @@ int vpool_mem_test(void)
 
     memset(hdl, 0, sizeof(hdl));
     for(i = 0; i < 4; i++) {
-        ret = ipkc_alloc_msg(&hdl[i], 236, 0);
+        ret = ipkc_alloc_msg(&hdl[i], 256, 0);
         if(ret){
             printf("ipkc_alloc_msg() failed\n");
             return ret;

@@ -10,9 +10,7 @@
 #include <linux/mutex.h>
 
 
-#define IPC_MEM_GUARD_SIZE (sizeof(unsigned long))
-#define IPC_BLOCK_SIZE (32)
-#define IPC_FBLOCK_SIZE  (IPC_BLOCK_SIZE + (IPC_MEM_GUARD_SIZE * 2))
+#define IPC_FBLOCK_SIZE  (32)
 
 union block {
     union block* next;

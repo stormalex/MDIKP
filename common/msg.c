@@ -1,8 +1,8 @@
 #include "msg.h"
 #include "log.h"
 
-struct msg* alloc_msg(int size, int wait);
-void free_msg(struct msg* p_msg);
+//struct msg* alloc_msg(int size, int wait);
+//void free_msg(struct msg* p_msg);
 
 static void init_msg(struct msg* msg, int size)
 {

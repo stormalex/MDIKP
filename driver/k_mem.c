@@ -12,50 +12,17 @@
 #include "if.h"
 #include "log.h"
 
-#define IPC_MEM_GRARD_MAGIC_A    0xAAAAAAAA
-#define IPC_MEM_GRARD_MAGIC_B    0xBBBBBBBB
-
 static struct vblock* vpool = NULL;
 static struct fblock* fblock = NULL;
-
-static inline void init_guard_magic(void* addr, int size)
-{
-    unsigned long* addr1 = addr;
-    unsigned long* addr2 = addr + size - IPC_MEM_GUARD_SIZE;
-    
-    *addr1 = IPC_MEM_GRARD_MAGIC_A;
-    *addr2 = IPC_MEM_GRARD_MAGIC_B;
-    
-    IPC_PRINT_DBG("guard magic 1: addr 0x%08x  val 0x%08x\n", (unsigned int)addr1, (unsigned int)*addr1);
-    IPC_PRINT_DBG("guard magic 2: addr 0x%08x  val 0x%08x\n", (unsigned int)addr2, (unsigned int)*addr2);
-}
-
-static inline void check_guard_magic(void* addr, int size)
-{
-    unsigned long* addr1 = addr;
-    unsigned long* addr2 = addr + size - IPC_MEM_GUARD_SIZE;
-    
-    if(*addr1 != IPC_MEM_GRARD_MAGIC_A) {
-        IPC_PRINT_DBG("MEM GUARD MAGIC A ERROR!!!\n");
-        IPC_PRINT_DBG("check guard magic 1: addr 0x%08x  val 0x%08x\n", (unsigned int)addr1, (unsigned int)*addr1);
-    }
-        
-    if(*addr2 != IPC_MEM_GRARD_MAGIC_B) {
-        IPC_PRINT_DBG("MEM GUARD MAGIC B ERROR!!!\n");
-        IPC_PRINT_DBG("check guard magic 2: addr 0x%08x  val 0x%08x\n", (unsigned int)addr2, (unsigned int)*addr2);
-    }
-}
 
 int ipc_mem_alloc(void** hdl, int size, int wait)
 {
     int ret = 0;
     void* addr = 0;
-    int act_size = size + IPC_MEM_GUARD_SIZE * 2;
-    int practical_size = act_size;
-    IPC_PRINT_DBG("CALL ipc_mem_alloc(), size=%d, wait=%d\n", act_size, wait);
+    IPC_PRINT_DBG("CALL ipc_mem_alloc(), size=%d, wait=%d\n", size, wait);
     
-    if(act_size <= IPC_FBLOCK_SIZE) {
-        act_size = IPC_FBLOCK_SIZE;
+    if(size <= IPC_FBLOCK_SIZE) {
+        size = IPC_FBLOCK_SIZE;
         
         if(!fblock) {
             return -ENODEV;
@@ -71,13 +38,12 @@ int ipc_mem_alloc(void** hdl, int size, int wait)
             return -ENODEV;
         }
         
-        addr = alloc_vpool(vpool, act_size, wait);
+        addr = alloc_vpool(vpool, size, wait);
     }
     
-    *hdl = addr + IPC_MEM_GUARD_SIZE;
-    init_guard_magic(addr, practical_size);
+    *hdl = addr;
     
-    IPC_PRINT_DBG("addr=0x%08x, hdl=0x%08x size=%d\n", (unsigned int)addr, (unsigned int)*hdl, practical_size);
+    IPC_PRINT_DBG("addr=0x%08x, hdl=0x%08x size=%d\n", (unsigned int)addr, (unsigned int)*hdl, size);
     
     return ret;
 }
@@ -85,18 +51,11 @@ EXPORT_SYMBOL(ipc_mem_alloc);
 
 void ipc_mem_free(void* hdl, int size)
 {
-    void* addr = hdl - IPC_MEM_GUARD_SIZE;
-    unsigned int act_size = size + (IPC_MEM_GUARD_SIZE*2);
-    
-    IPC_PRINT_DBG("CALL ipc_mem_free(), hdl=0x%08x, size=%d\n", (unsigned int)addr, act_size);
-
-    check_guard_magic(addr, act_size);
-    
-    if(act_size <= IPC_FBLOCK_SIZE) {
-        free_fblock(fblock, addr);
+    if(size <= IPC_FBLOCK_SIZE) {
+        free_fblock(fblock, hdl);
     }
     else {
-        free_vpool(vpool, addr, act_size);
+        free_vpool(vpool, hdl, size);
     }
 }
 EXPORT_SYMBOL(ipc_mem_free);
