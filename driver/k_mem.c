@@ -5,8 +5,9 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/uaccess.h>
+#include <linux/slab.h>
 
-#include "k_common.h"
+#include "common.h"
 #include "vblock.h"
 #include "fblock.h"
 #include "if.h"

@@ -5,8 +5,9 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/uaccess.h>
+#include<linux/proc_fs.h>
 
-#include "k_common.h"
+#include "common.h"
 #include "log.h"
 
 /*************function declaration**************/

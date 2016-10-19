@@ -7,9 +7,10 @@
 #include <linux/sched.h>
 #include <linux/uaccess.h>
 #include <linux/mutex.h>
+#include <linux/slab.h>
 
 #include "util.h"
-#include "k_common.h"
+#include "common.h"
 #include "if.h"
 #include "log.h"
 
